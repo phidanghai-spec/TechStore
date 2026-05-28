@@ -1,0 +1,175 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  ADMIN
+  CUSTOMER
+}
+
+enum Rank {
+  SILVER
+  GOLD
+  PLATINUM
+}
+
+enum ProductStatus {
+  HOT
+  BEST_SELLER
+  NORMAL
+}
+
+enum OrderStatus {
+  PENDING
+  APPROVED
+  SHIPPING
+  DELIVERED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  COD
+  MOMO
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+model User {
+  id            String          @id @default(uuid())
+  email         String          @unique
+  fullName      String
+  phone         String
+  password      String
+  address       String
+  dob           DateTime
+  role          Role            @default(CUSTOMER)
+  loyaltyPoints Int             @default(0)
+  rank          Rank            @default(SILVER)
+  isLocked      Boolean         @default(false)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  orders        Order[]
+  reviews       ProductReview[]
+  qnas          ProductQna[]
+  sentMessages ChatMessage[]   @relation("SentMessages")
+  receivedMessages ChatMessage[] @relation("ReceivedMessages")
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String    @unique
+  slug      String    @unique
+  products  Product[]
+}
+
+model Product {
+  id            String        @id @default(uuid())
+  categoryId    String
+  category      Category      @relation(fields: [categoryId], references: [id])
+  name          String
+  slug          String        @unique
+  originalPrice Float
+  salePrice     Float
+  stock         Int           @default(0)
+  status        ProductStatus @default(NORMAL)
+  imageUrl      String
+  description   String        @db.Text // JSON string or text containing specs/description
+  brand         String
+  tags          String        @default("") // Comma separated tags for advanced search
+  isVisible     Boolean       @default(true)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  orderItems    OrderItem[]
+  reviews       ProductReview[]
+  qnas          ProductQna[]
+}
+
+model Order {
+  id             String        @id @default(uuid())
+  userId         String?       // Nullable if guest checkout
+  user           User?         @relation(fields: [userId], references: [id])
+  customerName   String
+  customerPhone  String
+  customerEmail  String
+  customerAddress String
+  paymentMethod  PaymentMethod @default(COD)
+  paymentStatus  PaymentStatus @default(PENDING)
+  orderStatus    OrderStatus   @default(PENDING)
+  totalAmount    Float
+  discountAmount Float         @default(0)
+  isDebt         Boolean       @default(false) // True if delivered but COD money not collected
+  deliveryStaff  String?       // Name or ID of delivery staff assigned
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  items          OrderItem[]
+}
+
+model OrderItem {
+  id        String  @id @default(uuid())
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Coupon {
+  id            String       @id @default(uuid())
+  code          String       @unique
+  discountType  DiscountType
+  discountValue Float
+  maxUsage      Int          @default(1)
+  usedCount     Int          @default(0)
+  expiryDate    DateTime
+  createdAt     DateTime     @default(now())
+}
+
+model ProductReview {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  rating    Int      // 1 to 5
+  comment   String
+  isApproved Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ProductQna {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  question  String
+  answer    String?
+  isApproved Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  message    String
+  createdAt  DateTime @default(now())
+}

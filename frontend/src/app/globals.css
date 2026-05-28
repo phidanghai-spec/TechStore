@@ -1,0 +1,101 @@
+/* Custom overrides to match design */
+body {
+  font-family: 'Inter', sans-serif !important;
+  background-color: #111111 !important; /* Dark mode background matching ElectroStore */
+  color: #eeeeee !important;
+}
+
+/* Custom Scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1a1a;
+}
+::-webkit-scrollbar-thumb {
+  background: #333333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #0d6efd;
+}
+
+/* Flash sale countdown style */
+.countdown-box {
+  background: #000000;
+  border: 1px solid #333;
+  padding: 10px 15px;
+  border-radius: 5px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #0d6efd;
+  min-width: 60px;
+  text-align: center;
+}
+
+/* Sold out label overlay */
+.sold-out-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #dc3545;
+  color: white;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  z-index: 10;
+  border-radius: 3px;
+}
+.hot-sold-out-overlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #ffc107;
+  color: black;
+  padding: 5px 10px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  z-index: 10;
+  border-radius: 3px;
+}
+
+/* Chat widget styles */
+.chat-widget-btn {
+  position: fixed;
+  bottom: 30px;
+  right: 30px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background-color: #0d6efd;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  cursor: pointer;
+  z-index: 999;
+  transition: all 0.3s ease;
+}
+.chat-widget-btn:hover {
+  transform: scale(1.1);
+  background-color: #0b5ed7;
+}
+
+.chat-popup {
+  position: fixed;
+  bottom: 100px;
+  right: 30px;
+  width: 360px;
+  height: 500px;
+  background-color: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+  display: flex;
+  flex-direction: column;
+  z-index: 999;
+  overflow: hidden;
+}
