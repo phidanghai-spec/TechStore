@@ -392,7 +392,7 @@ export default function AdminPage() {
       bankAccount: usrBankAccount || null,
       dob: usrDob,
       role: usrRole,
-      loyaltyPoints: parseInt(usrLoyaltyPoints || '0'),
+      loyaltyPoints: Math.floor(parseInt(usrLoyaltyPoints || '0') / 100000),
       rank: usrRank,
       deposit: parseFloat(usrDeposit || '0')
     };
@@ -428,7 +428,7 @@ export default function AdminPage() {
     setUsrBankAccount(u.bankAccount || '');
     setUsrDob(u.dob ? u.dob.substring(0, 10) : '');
     setUsrRole(u.role);
-    setUsrLoyaltyPoints(u.loyaltyPoints.toString());
+    setUsrLoyaltyPoints((u.loyaltyPoints * 100000).toString());
     setUsrRank(u.rank);
     setUsrDeposit(u.deposit ? u.deposit.toString() : '0');
     setUserModalOpen(true);
@@ -1046,8 +1046,8 @@ export default function AdminPage() {
                             </select>
                           </div>
                           <div className="col-md-4 mb-3">
-                            <label className="form-label fs-8 text-secondary">Điểm vàng tích lũy</label>
-                            <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={usrLoyaltyPoints} onChange={(e) => setUsrLoyaltyPoints(e.target.value)} placeholder="0" />
+                            <label className="form-label fs-8 text-secondary">Doanh số mua tích lũy (VNĐ)</label>
+                            <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={usrLoyaltyPoints} onChange={(e) => setUsrLoyaltyPoints(e.target.value)} placeholder="Ví dụ: 50000000" />
                           </div>
                           <div className="col-md-4 mb-3">
                             <label className="form-label fs-8 text-secondary">Tiền ký quỹ (VNĐ)</label>

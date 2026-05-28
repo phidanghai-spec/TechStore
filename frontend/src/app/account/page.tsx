@@ -721,8 +721,10 @@ export default function AccountPage() {
                             </div>
                             <div className="d-flex justify-content-between align-items-end">
                               <div>
-                                <span className="fs-9 opacity-75">ĐIỂM TÍCH LŨY</span>
-                                <h3 className="fw-bold m-0 text-black shadow-text">{user?.loyaltyPoints || 0} Điểm</h3>
+                                <span className="fs-9 opacity-75">DOANH SỐ MUA TÍCH LŨY</span>
+                                <h3 className="fw-bold m-0 text-black shadow-text">
+                                  {new Intl.NumberFormat('vi-VN').format((user?.loyaltyPoints || 0) * 100000)}đ
+                                </h3>
                               </div>
                               <span className="fs-5 fw-bold text-black border border-black px-3 py-1 rounded bg-white shadow-sm">
                                 HẠNG {user?.rank === 'PLATINUM' ? 'BẠCH KIM' : user?.rank === 'GOLD' ? 'VÀNG' : 'BẠC'}
@@ -734,12 +736,12 @@ export default function AccountPage() {
                         {/* Point explanation */}
                         <div className="col-md-6">
                           <div className="bg-black p-4 rounded border border-secondary h-100">
-                            <h6 className="text-primary mb-2">Quy định tích điểm & phân hạng:</h6>
+                            <h6 className="text-primary mb-2">Quy định phân hạng thành viên:</h6>
                             <ul className="fs-7 text-secondary ps-3 m-0">
-                              <li className="mb-1"><strong>Tích lũy:</strong> 100.000đ thanh toán đơn hàng thành công = 1 điểm.</li>
-                              <li className="mb-1"><strong>Hạng Bạc:</strong> Dưới 500 điểm tích lũy.</li>
-                              <li className="mb-1"><strong>Hạng Vàng:</strong> Từ 500 - 999 điểm (Nhận giảm giá 2% đơn hàng).</li>
-                              <li className="mb-1"><strong>Hạng Bạch Kim:</strong> Từ 1000 điểm trở lên (Nhận giảm giá 5% đơn hàng).</li>
+                              <li className="mb-1"><strong>Tích lũy doanh số:</strong> Tự động cộng dồn giá trị tất cả đơn hàng đã giao dịch thành công.</li>
+                              <li className="mb-1"><strong>Hạng Bạc:</strong> Tổng chi tiêu tích lũy dưới 50.000.000đ.</li>
+                              <li className="mb-1"><strong>Hạng Vàng:</strong> Từ 50.000.000đ đến dưới 100.000.000đ (Chiết khấu trực tiếp 2% trên mỗi đơn hàng).</li>
+                              <li className="mb-1"><strong>Hạng Bạch Kim:</strong> Từ 1000 điểm tương đương 100.000.000đ trở lên (Chiết khấu trực tiếp 5% trên mỗi đơn hàng).</li>
                             </ul>
                           </div>
                         </div>
