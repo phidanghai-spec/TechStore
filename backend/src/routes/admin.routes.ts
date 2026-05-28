@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { AdminController } from '../controllers/admin.controller';
+import { WarrantyController } from '../controllers/warranty.controller';
 import { verifyToken, requireAdmin } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -15,7 +16,14 @@ router.delete('/products/:id', AdminController.deleteProduct);
 
 // User Management
 router.get('/users', AdminController.getAllUsers);
+router.post('/users', AdminController.createUser);
+router.put('/users/:id', AdminController.updateUser);
+router.put('/users/:id/password', AdminController.resetUserPassword);
 router.put('/users/:id/lock', AdminController.toggleLockUser);
+
+// Warranty Management
+router.get('/warranties', WarrantyController.getWarranties);
+router.put('/warranties/:id', WarrantyController.updateWarrantyStatus);
 
 // Coupon Management
 router.get('/coupons', AdminController.getAllCoupons);

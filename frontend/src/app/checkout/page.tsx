@@ -31,6 +31,10 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState('');
 
+  // Membership Rank Discount
+  const [userRank, setUserRank] = useState<'SILVER' | 'GOLD' | 'PLATINUM' | null>(null);
+  const [rankDiscount, setRankDiscount] = useState(0);
+
   useEffect(() => {
     // 1. Load cart
     const storedCart = localStorage.getItem('cart');
@@ -60,11 +64,22 @@ export default function CheckoutPage() {
         setCustomerPhone(user.phone || '');
         setCustomerEmail(user.email || '');
         setCustomerAddress(user.address || '');
+        setUserRank(user.rank || null);
       } catch (e) {
         // ignore
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (userRank === 'GOLD') {
+      setRankDiscount(totalAmount * 0.02);
+    } else if (userRank === 'PLATINUM') {
+      setRankDiscount(totalAmount * 0.05);
+    } else {
+      setRankDiscount(0);
+    }
+  }, [totalAmount, userRank]);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +165,7 @@ export default function CheckoutPage() {
     }
   };
 
-  const finalPayable = Math.max(0, totalAmount - discountAmount);
+  const finalPayable = Math.max(0, totalAmount - discountAmount - rankDiscount);
 
   return (
     <>
@@ -314,9 +329,18 @@ export default function CheckoutPage() {
 
                 {discountAmount > 0 && (
                   <div className="d-flex justify-content-between mb-2 text-secondary fs-7">
-                    <span>Mã giảm giá:</span>
+                    <span>Mã giảm giá (Coupon):</span>
                     <span className="text-danger fw-bold">
                       -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(discountAmount)}
+                    </span>
+                  </div>
+                )}
+
+                {rankDiscount > 0 && (
+                  <div className="d-flex justify-content-between mb-2 text-secondary fs-7">
+                    <span>Ưu đãi thành viên ({userRank === 'PLATINUM' ? 'Bạch Kim -5%' : 'Vàng -2%'}):</span>
+                    <span className="text-danger fw-bold">
+                      -{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(rankDiscount)}
                     </span>
                   </div>
                 )}

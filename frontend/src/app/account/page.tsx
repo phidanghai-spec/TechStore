@@ -23,15 +23,25 @@ export default function AccountPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [address, setAddress] = useState('');
+  const [address2, setAddress2] = useState('');
+  const [bankAccount, setBankAccount] = useState('');
   const [dob, setDob] = useState('');
   const [authError, setAuthError] = useState('');
   const [authSuccess, setAuthSuccess] = useState('');
+
+  // Warranties state
+  const [warranties, setWarranties] = useState<any[]>([]);
+  const [warrantiesLoading, setWarrantiesLoading] = useState(false);
+
+  // Facebook Mock Login state
+  const [showFacebookMock, setShowFacebookMock] = useState(false);
+  const [facebookLoading, setFacebookLoading] = useState(false);
 
   // Forgot password inputs
   const [forgotEmail, setForgotEmail] = useState('');
 
   // Logged-in Dashboard state
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'loyalty' | 'security'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'loyalty' | 'security' | 'warranties'>('profile');
   const [myOrders, setMyOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
@@ -59,6 +69,8 @@ export default function AccountPage() {
         setFullName(parsed.fullName);
         setPhone(parsed.phone);
         setAddress(parsed.address);
+        setAddress2(parsed.address2 || '');
+        setBankAccount(parsed.bankAccount || '');
         setDob(parsed.dob ? parsed.dob.substring(0, 10) : '');
       } catch (e) {
         setIsLoggedIn(false);
@@ -120,6 +132,8 @@ export default function AccountPage() {
         setFullName(data.user.fullName);
         setPhone(data.user.phone);
         setAddress(data.user.address);
+        setAddress2(data.user.address2 || '');
+        setBankAccount(data.user.bankAccount || '');
         setDob(data.user.dob ? data.user.dob.substring(0, 10) : '');
 
         setIsLoggedIn(true);
@@ -203,20 +217,20 @@ export default function AccountPage() {
 
     const token = localStorage.getItem('token');
     try {
-      // Backend handles user profile update
-      const res = await fetch(`${BACKEND_URL}/api/admin/users/${user.id}`, { // Admin update route can be used or we can use generic user route, but here we can just update locally and show message
+      // Backend handles user profile update via the customer route /api/auth/profile
+      const res = await fetch(`${BACKEND_URL}/api/auth/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({ fullName, phone, address, dob })
+        body: JSON.stringify({ fullName, phone, address, address2, bankAccount, dob })
       });
       
       const data = await res.json();
       if (res.ok) {
         // Update user state
-        const updatedUser = { ...user, fullName, phone, address, dob };
+        const updatedUser = data.user;
         localStorage.setItem('user', JSON.stringify(updatedUser));
         setUser(updatedUser);
         setProfileSuccess('Cập nhật thông tin tài khoản thành công!');
@@ -226,6 +240,65 @@ export default function AccountPage() {
       }
     } catch (err) {
       setProfileError('Không thể lưu thông tin. Lỗi kết nối.');
+    }
+  };
+
+  // Fetch warranties
+  const fetchMyWarranties = async () => {
+    setWarrantiesLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/warranties/my-warranties`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        setWarranties(await res.json());
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWarrantiesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isLoggedIn && activeTab === 'warranties') {
+      fetchMyWarranties();
+    }
+  }, [isLoggedIn, activeTab]);
+
+  const handleFacebookMockLogin = async (mockEmail: string) => {
+    setFacebookLoading(true);
+    setAuthError('');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: mockEmail, password: 'customer123' })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('user', JSON.stringify(data.user));
+        setUser(data.user);
+        setFullName(data.user.fullName);
+        setPhone(data.user.phone);
+        setAddress(data.user.address);
+        setAddress2(data.user.address2 || '');
+        setBankAccount(data.user.bankAccount || '');
+        setDob(data.user.dob ? data.user.dob.substring(0, 10) : '');
+
+        setIsLoggedIn(true);
+        window.dispatchEvent(new Event('user-logged-in'));
+        setAuthSuccess('Đăng nhập bằng Facebook thành công!');
+        setShowFacebookMock(false);
+      } else {
+        setAuthError(data.message || 'Facebook Login thất bại.');
+      }
+    } catch (e) {
+      setAuthError('Không thể kết nối máy chủ.');
+    } finally {
+      setFacebookLoading(false);
     }
   };
 
@@ -438,6 +511,20 @@ export default function AccountPage() {
                         />
                       </div>
                       <button type="submit" className="w-100 btn btn-primary btn-sm mb-3 py-2">Đăng nhập</button>
+                      
+                      <div className="d-flex align-items-center my-3">
+                        <hr className="flex-grow-1 border-secondary m-0" />
+                        <span className="px-2 text-secondary fs-8">Hoặc</span>
+                        <hr className="flex-grow-1 border-secondary m-0" />
+                      </div>
+                      
+                      <button type="button" onClick={() => setShowFacebookMock(true)} className="w-100 btn btn-outline-info btn-sm mb-3 py-2 d-flex align-items-center justify-content-center gap-2" style={{ borderColor: '#3b5998', color: '#8b9dc3' }}>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook" viewBox="0 0 16 16">
+                          <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
+                        </svg>
+                        Đăng nhập bằng Facebook
+                      </button>
+
                       <p className="text-secondary fs-8 text-center m-0">
                         Chưa có tài khoản?{' '}
                         <button type="button" onClick={() => { setShowRegister(true); setAuthError(''); }} className="btn btn-link p-0 fs-8 text-decoration-none">Đăng ký ngay</button>
@@ -471,6 +558,9 @@ export default function AccountPage() {
                     </button>
                     <button onClick={() => setActiveTab('orders')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'orders' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                       📦 Lịch sử mua hàng
+                    </button>
+                    <button onClick={() => setActiveTab('warranties')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'warranties' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                      🛡 Bảo hành sản phẩm
                     </button>
                     <button onClick={() => setActiveTab('loyalty')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'loyalty' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                       💎 Khách hàng thân thiết
@@ -511,8 +601,16 @@ export default function AccountPage() {
                           <input type="tel" className="form-control bg-black border-secondary text-white fs-7" required value={phone} onChange={(e) => setPhone(e.target.value)} />
                         </div>
                         <div className="mb-3">
-                          <label className="form-label fs-7 text-secondary">Địa chỉ giao hàng</label>
+                          <label className="form-label fs-7 text-secondary">Địa chỉ giao hàng 1 (Chính)</label>
                           <input type="text" className="form-control bg-black border-secondary text-white fs-7" required value={address} onChange={(e) => setAddress(e.target.value)} />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label fs-7 text-secondary">Địa chỉ giao hàng 2 (Phụ)</label>
+                          <input type="text" className="form-control bg-black border-secondary text-white fs-7" value={address2} onChange={(e) => setAddress2(e.target.value)} placeholder="Nhập địa chỉ giao hàng dự phòng..." />
+                        </div>
+                        <div className="mb-3">
+                          <label className="form-label fs-7 text-secondary">Thông tin tài khoản ngân hàng (Không bắt buộc)</label>
+                          <input type="text" className="form-control bg-black border-secondary text-white fs-7" value={bankAccount} onChange={(e) => setBankAccount(e.target.value)} placeholder="Ví dụ: MB Bank - 123456789 - NGUYEN VAN A" />
                         </div>
                         <div className="mb-4">
                           <label className="form-label fs-7 text-secondary">Ngày sinh</label>
@@ -671,6 +769,55 @@ export default function AccountPage() {
                     </div>
                   )}
 
+                  {/* 5. WARRANTIES TAB */}
+                  {activeTab === 'warranties' && (
+                    <div>
+                      <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Thông tin bảo hành sản phẩm đã mua</h4>
+                      {warrantiesLoading ? (
+                        <p className="text-secondary fs-7 text-center py-5">Đang tải thông tin bảo hành...</p>
+                      ) : warranties.length === 0 ? (
+                        <p className="text-secondary fs-7 text-center py-5">Bạn chưa có sản phẩm nào được kích hoạt bảo hành.</p>
+                      ) : (
+                        <div className="table-responsive rounded border border-secondary bg-black">
+                          <table className="table table-dark table-striped align-middle fs-7 m-0">
+                            <thead>
+                              <tr>
+                                <th className="ps-3">Sản phẩm</th>
+                                <th>Mã bảo hành</th>
+                                <th>Thời hạn bảo hành</th>
+                                <th>Trạng thái</th>
+                                <th>Ghi chú sửa chữa</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {warranties.map((w, i) => (
+                                <tr key={i}>
+                                  <td className="ps-3">
+                                    <div className="d-flex align-items-center gap-2">
+                                      <img src={w.product?.imageUrl} width="35" height="35" className="rounded" style={{ objectFit: 'contain' }} />
+                                      <span className="text-white fw-bold">{w.product?.name}</span>
+                                    </div>
+                                  </td>
+                                  <td className="fw-bold text-primary">{w.warrantyCode}</td>
+                                  <td>
+                                    <small className="d-block text-secondary">Kích hoạt: {new Date(w.startDate).toLocaleDateString('vi-VN')}</small>
+                                    <small className="d-block text-danger fw-bold">Hết hạn: {new Date(w.endDate).toLocaleDateString('vi-VN')}</small>
+                                  </td>
+                                  <td>
+                                    {w.status === 'ACTIVE' && <span className="badge bg-success">Đang hiệu lực</span>}
+                                    {w.status === 'EXPIRED' && <span className="badge bg-danger">Hết hạn</span>}
+                                    {w.status === 'CLAIMED' && <span className="badge bg-warning text-black">Đang bảo hành</span>}
+                                  </td>
+                                  <td>{w.notes || 'Không có ghi chú.'}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                 </div>
               </div>
             </div>
@@ -678,6 +825,37 @@ export default function AccountPage() {
 
         </div>
       </div>
+
+      {/* Facebook Mock Login Modal */}
+      {showFacebookMock && (
+        <div className="position-fixed top-0 start-0 w-100 h-100 bg-black bg-opacity-75 d-flex justify-content-center align-items-center z-3">
+          <div className="bg-dark p-4 rounded-3 border border-secondary text-center" style={{ maxWidth: '400px', width: '90%' }}>
+            <div className="mb-3 text-info">
+              <svg xmlns="http://www.w3.org/2000/svg" width="50" height="50" fill="#1877f2" className="bi bi-facebook" viewBox="0 0 16 16">
+                <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
+              </svg>
+            </div>
+            <h5 className="text-white mb-2">Đăng nhập Facebook</h5>
+            <p className="fs-8 text-secondary mb-4">Mô phỏng tích hợp SDK Đăng nhập một chạm của Facebook.</p>
+            
+            {facebookLoading ? (
+              <div className="spinner-border text-info my-3" role="status"></div>
+            ) : (
+              <div className="d-flex flex-column gap-2 mb-3">
+                <button onClick={() => handleFacebookMockLogin('platinum@gmail.com')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
+                  👤 Tiếp tục dưới tên <strong>Khách hàng Platinum</strong>
+                </button>
+                <button onClick={() => handleFacebookMockLogin('gold@gmail.com')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
+                  👤 Tiếp tục dưới tên <strong>Khách hàng Gold</strong>
+                </button>
+              </div>
+            )}
+            
+            <button onClick={() => setShowFacebookMock(false)} className="btn btn-secondary btn-xs mt-3">Đóng</button>
+          </div>
+        </div>
+      )}
+
       <ChatWidget />
       <Footer />
 

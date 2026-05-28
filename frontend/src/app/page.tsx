@@ -121,6 +121,37 @@ export default function HomePage() {
   const [hotProducts, setHotProducts] = useState<any[]>([]);
   const [bestSellers, setBestSellers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // Warranty Track State
+  const [warrantyQuery, setWarrantyQuery] = useState('');
+  const [warrantyResults, setWarrantyResults] = useState<any[] | null>(null);
+  const [warrantyLoading, setWarrantyLoading] = useState(false);
+  const [warrantyError, setWarrantyError] = useState('');
+
+  const handleTrackWarranty = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setWarrantyError('');
+    setWarrantyResults(null);
+    if (!warrantyQuery.trim()) return;
+
+    setWarrantyLoading(true);
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/warranties/track?query=${warrantyQuery.trim()}`);
+      const data = await res.json();
+      if (res.ok) {
+        setWarrantyResults(data);
+        if (data.length === 0) {
+          setWarrantyError('Không tìm thấy thông tin bảo hành cho số điện thoại hoặc mã bảo hành này.');
+        }
+      } else {
+        setWarrantyError(data.message || 'Lỗi tra cứu bảo hành.');
+      }
+    } catch (err) {
+      setWarrantyError('Lỗi kết nối máy chủ.');
+    } finally {
+      setWarrantyLoading(false);
+    }
+  };
   
   // Custom Slider State
   const [activeSlide, setActiveSlide] = useState(0);
@@ -272,6 +303,71 @@ export default function HomePage() {
               <div className="p-3">
                 <h6 className="text-uppercase m-0">🎁 Tích lũy điểm vàng</h6>
                 <small className="text-secondary">Thăng hạng nhận ưu đãi khủng</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 2.5. Warranty tracking public section */}
+      <section className="py-5 bg-black border-bottom border-secondary">
+        <div className="container-fluid px-md-5">
+          <div className="bg-dark p-4 rounded-3 border border-secondary">
+            <div className="row align-items-center g-4">
+              <div className="col-lg-5">
+                <h4 className="text-uppercase text-white mb-2 border-start border-primary border-4 ps-3">Tra cứu bảo hành sản phẩm</h4>
+                <p className="text-secondary fs-7 mb-0">Nhập Số điện thoại hoặc Mã bảo hành (ví dụ: BH-XXXX) để kiểm tra thời hạn và trạng thái bảo hành thiết bị của bạn.</p>
+              </div>
+              <div className="col-lg-7">
+                <form onSubmit={handleTrackWarranty} className="d-flex gap-2">
+                  <input 
+                    type="text" 
+                    placeholder="Nhập số điện thoại mua hàng hoặc mã bảo hành..." 
+                    className="form-control bg-black border-secondary text-white fs-7" 
+                    value={warrantyQuery}
+                    onChange={(e) => setWarrantyQuery(e.target.value)}
+                    required
+                  />
+                  <button type="submit" className="btn btn-primary btn-sm px-4" disabled={warrantyLoading}>
+                    {warrantyLoading ? 'Đang tra...' : 'Tra cứu'}
+                  </button>
+                </form>
+
+                {warrantyError && <div className="text-danger fs-8 mt-2">{warrantyError}</div>}
+                
+                {warrantyResults && warrantyResults.length > 0 && (
+                  <div className="table-responsive rounded border border-secondary mt-3 bg-black" style={{ maxHeight: '250px' }}>
+                    <table className="table table-dark table-striped align-middle fs-8 m-0">
+                      <thead>
+                        <tr>
+                          <th>Sản phẩm</th>
+                          <th>Mã bảo hành</th>
+                          <th>Thời hạn bảo hành</th>
+                          <th>Trạng thái</th>
+                          <th>Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {warrantyResults.map((w, idx) => (
+                          <tr key={idx}>
+                            <td>{w.product?.name} ({w.product?.brand})</td>
+                            <td className="fw-bold text-primary">{w.warrantyCode}</td>
+                            <td>
+                              <span className="text-secondary d-block">Kích hoạt: {new Date(w.startDate).toLocaleDateString('vi-VN')}</span>
+                              <span className="text-danger fw-bold">Hết hạn: {new Date(w.endDate).toLocaleDateString('vi-VN')}</span>
+                            </td>
+                            <td>
+                              {w.status === 'ACTIVE' && <span className="badge bg-success">Đang hiệu lực</span>}
+                              {w.status === 'EXPIRED' && <span className="badge bg-danger">Hết hạn</span>}
+                              {w.status === 'CLAIMED' && <span className="badge bg-warning text-black">Đang bảo hành</span>}
+                            </td>
+                            <td>{w.notes || '-'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
             </div>
           </div>

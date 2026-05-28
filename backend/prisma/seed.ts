@@ -45,13 +45,16 @@ async function main() {
       phone: '0901234567',
       password: customerPasswordHash,
       address: '828 Sư Vạn Hạnh, Phường 13, Quận 10, TP.HCM',
+      address2: '100 Lê Hồng Phong, Quận 5, TP.HCM',
+      bankAccount: '111122223333 (Agribank)',
+      deposit: 5000000, // 5M VND
       dob: new Date('1995-05-15'),
       role: Role.CUSTOMER,
       loyaltyPoints: 150, // Silver tier (100 - 499)
       rank: Rank.SILVER,
     },
   });
-
+ 
   const customerGold = await prisma.user.create({
     data: {
       email: 'gold@gmail.com',
@@ -59,13 +62,16 @@ async function main() {
       phone: '0912345678',
       password: customerPasswordHash,
       address: '123 Cách Mạng Tháng Tám, Quận 3, TP.HCM',
+      address2: '456 Lê Lợi, Quận 1, TP.HCM',
+      bankAccount: '888877776666 (Techcombank)',
+      deposit: 10000000, // 10M VND
       dob: new Date('1993-10-20'),
       role: Role.CUSTOMER,
       loyaltyPoints: 600, // Gold tier (500 - 999)
       rank: Rank.GOLD,
     },
   });
-
+ 
   const customerPlatinum = await prisma.user.create({
     data: {
       email: 'platinum@gmail.com',
@@ -73,6 +79,9 @@ async function main() {
       phone: '0923456789',
       password: customerPasswordHash,
       address: '456 Nguyễn Thị Minh Khai, Quận 1, TP.HCM',
+      address2: '789 Điện Biên Phủ, Quận Bình Thạnh, TP.HCM',
+      bankAccount: '9999123456789 (Vietcombank)',
+      deposit: 25000000, // 25M VND
       dob: new Date('1988-12-30'),
       role: Role.CUSTOMER,
       loyaltyPoints: 1200, // Platinum tier (>= 1000)

@@ -12,7 +12,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'coupons' | 'cskh' | 'chat'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'coupons' | 'cskh' | 'chat' | 'warranties'>('dashboard');
 
   // Dashboard Stats State
   const [stats, setStats] = useState<any>(null);
@@ -98,6 +98,7 @@ export default function AdminPage() {
     if (activeTab === 'coupons') fetchAdminCoupons();
     if (activeTab === 'cskh') { fetchAdminReviews(); fetchAdminQnas(); }
     if (activeTab === 'chat') { fetchAdminChatList(); initChatSocket(); }
+    if (activeTab === 'warranties') fetchAdminWarranties();
 
     // cleanup socket on tab change
     return () => {
@@ -300,10 +301,15 @@ export default function AdminPage() {
         headers: getHeaders(),
         body: JSON.stringify({ orderStatus: status })
       });
+      const data = await res.json();
       if (res.ok) {
         fetchAdminOrders();
+      } else {
+        alert(data.message || 'Lỗi cập nhật trạng thái đơn hàng.');
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      alert('Lỗi kết nối máy chủ.');
+    }
   };
 
   const handleAssignDelivery = async (e: React.FormEvent) => {
@@ -319,12 +325,17 @@ export default function AdminPage() {
           deliveryStaff: deliveryStaffName
         })
       });
+      const data = await res.json();
       if (res.ok) {
         setAssigningOrderId(null);
         setDeliveryStaffName('');
         fetchAdminOrders();
+      } else {
+        alert(data.message || 'Lỗi phân công giao hàng.');
       }
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      alert('Lỗi kết nối.');
+    }
   };
 
   const handleCollectDebt = async (orderId: string) => {
@@ -333,8 +344,173 @@ export default function AdminPage() {
         method: 'PUT',
         headers: getHeaders()
       });
+      const data = await res.json();
       if (res.ok) {
         fetchAdminOrders();
+      } else {
+        alert(data.message || 'Lỗi thu tiền công nợ.');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối.');
+    }
+  };
+
+  // User CRUD states & handlers
+  const [userModalOpen, setUserModalOpen] = useState(false);
+  const [userPasswordResetOpen, setUserPasswordResetOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  const [usrEmail, setUsrEmail] = useState('');
+  const [usrPassword, setUsrPassword] = useState('');
+  const [usrFullName, setUsrFullName] = useState('');
+  const [usrPhone, setUsrPhone] = useState('');
+  const [usrAddress, setUsrAddress] = useState('');
+  const [usrAddress2, setUsrAddress2] = useState('');
+  const [usrBankAccount, setUsrBankAccount] = useState('');
+  const [usrDob, setUsrDob] = useState('');
+  const [usrRole, setUsrRole] = useState<'CUSTOMER' | 'ADMIN'>('CUSTOMER');
+  const [usrLoyaltyPoints, setUsrLoyaltyPoints] = useState('');
+  const [usrRank, setUsrRank] = useState<'SILVER' | 'GOLD' | 'PLATINUM'>('SILVER');
+  const [usrDeposit, setUsrDeposit] = useState('');
+  const [usrNewPassword, setUsrNewPassword] = useState('');
+
+  const handleUserSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const url = selectedUser
+      ? `${BACKEND_URL}/api/admin/users/${selectedUser.id}`
+      : `${BACKEND_URL}/api/admin/users`;
+    
+    const method = selectedUser ? 'PUT' : 'POST';
+
+    const bodyData = {
+      email: usrEmail,
+      password: usrPassword || undefined,
+      fullName: usrFullName,
+      phone: usrPhone,
+      address: usrAddress,
+      address2: usrAddress2 || null,
+      bankAccount: usrBankAccount || null,
+      dob: usrDob,
+      role: usrRole,
+      loyaltyPoints: parseInt(usrLoyaltyPoints || '0'),
+      rank: usrRank,
+      deposit: parseFloat(usrDeposit || '0')
+    };
+
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: getHeaders(),
+        body: JSON.stringify(bodyData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert(selectedUser ? 'Cập nhật thông tin thành công!' : 'Tạo người dùng mới thành công!');
+        setUserModalOpen(false);
+        clearUserForm();
+        fetchAdminUsers();
+      } else {
+        alert(data.message || 'Lỗi xử lý.');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối.');
+    }
+  };
+
+  const handleEditUserClick = (u: any) => {
+    setSelectedUser(u);
+    setUsrEmail(u.email);
+    setUsrPassword('');
+    setUsrFullName(u.fullName);
+    setUsrPhone(u.phone);
+    setUsrAddress(u.address);
+    setUsrAddress2(u.address2 || '');
+    setUsrBankAccount(u.bankAccount || '');
+    setUsrDob(u.dob ? u.dob.substring(0, 10) : '');
+    setUsrRole(u.role);
+    setUsrLoyaltyPoints(u.loyaltyPoints.toString());
+    setUsrRank(u.rank);
+    setUsrDeposit(u.deposit ? u.deposit.toString() : '0');
+    setUserModalOpen(true);
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usrNewPassword || !selectedUser) return;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/users/${selectedUser.id}/password`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ newPassword: usrNewPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Đặt lại mật khẩu thành công!');
+        setUserPasswordResetOpen(false);
+        setUsrNewPassword('');
+      } else {
+        alert(data.message || 'Lỗi xử lý.');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối.');
+    }
+  };
+
+  const clearUserForm = () => {
+    setSelectedUser(null);
+    setUsrEmail('');
+    setUsrPassword('');
+    setUsrFullName('');
+    setUsrPhone('');
+    setUsrAddress('');
+    setUsrAddress2('');
+    setUsrBankAccount('');
+    setUsrDob('');
+    setUsrRole('CUSTOMER');
+    setUsrLoyaltyPoints('');
+    setUsrRank('SILVER');
+    setUsrDeposit('');
+  };
+
+  // Warranty Admin states & handlers
+  const [warranties, setWarranties] = useState<any[]>([]);
+  const [warrantyStatusFilter, setWarrantyStatusFilter] = useState('');
+  const [warrantyQueryFilter, setWarrantyQueryFilter] = useState('');
+  const [editingWarranty, setEditingWarranty] = useState<any>(null);
+  const [wrtStatus, setWrtStatus] = useState<'ACTIVE' | 'EXPIRED' | 'CLAIMED'>('ACTIVE');
+  const [wrtNotes, setWrtNotes] = useState('');
+
+  const fetchAdminWarranties = async () => {
+    try {
+      const params = new URLSearchParams();
+      if (warrantyStatusFilter) params.append('status', warrantyStatusFilter);
+      if (warrantyQueryFilter) params.append('query', warrantyQueryFilter);
+
+      const res = await fetch(`${BACKEND_URL}/api/admin/warranties?${params.toString()}`, { headers: getHeaders() });
+      if (res.ok) {
+        setWarranties(await res.json());
+      }
+    } catch (e) { console.error(e); }
+  };
+
+  const handleUpdateWarrantySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingWarranty) return;
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/warranties/${editingWarranty.id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ status: wrtStatus, notes: wrtNotes })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        alert('Cập nhật bảo hành thành công!');
+        setEditingWarranty(null);
+        fetchAdminWarranties();
+      } else {
+        alert(data.message || 'Lỗi cập nhật.');
       }
     } catch (err) { console.error(err); }
   };
@@ -559,6 +735,9 @@ export default function AdminPage() {
                   </button>
                   <button onClick={() => setActiveTab('cskh')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'cskh' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                     💬 Duyệt Đánh giá & Hỏi đáp
+                  </button>
+                  <button onClick={() => setActiveTab('warranties')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'warranties' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                    🛡 Quản lý Bảo hành
                   </button>
                   <button onClick={() => setActiveTab('chat')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'chat' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                     💬 Chat hỗ trợ trực tuyến
@@ -826,18 +1005,109 @@ export default function AdminPage() {
                    ========================================== */}
                 {activeTab === 'users' && (
                   <div>
-                    <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Quản lý người dùng</h4>
+                    <div className="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom border-secondary">
+                      <h4 className="text-white text-uppercase fs-6 m-0">Quản lý người dùng</h4>
+                      <button onClick={() => { clearUserForm(); setUserModalOpen(true); }} className="btn btn-primary btn-sm">➕ Thêm người dùng mới</button>
+                    </div>
+
+                    {/* User Add/Edit Form */}
+                    {userModalOpen && (
+                      <form onSubmit={handleUserSubmit} className="mb-5 bg-black p-4 rounded border border-primary">
+                        <h5 className="text-primary fs-7 mb-3">{selectedUser ? `Chỉnh sửa: ${selectedUser.email}` : 'Thêm tài khoản người dùng mới'}</h5>
+                        <div className="row">
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Họ và tên</label>
+                            <input type="text" className="form-control bg-dark border-secondary text-white fs-7" required value={usrFullName} onChange={(e) => setUsrFullName(e.target.value)} placeholder="Nguyễn Văn A" />
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Email đăng nhập</label>
+                            <input type="email" className="form-control bg-dark border-secondary text-white fs-7" required disabled={!!selectedUser} value={usrEmail} onChange={(e) => setUsrEmail(e.target.value)} placeholder="user@gmail.com" />
+                          </div>
+                          {!selectedUser && (
+                            <div className="col-md-4 mb-3">
+                              <label className="form-label fs-8 text-secondary">Mật khẩu</label>
+                              <input type="password" className="form-control bg-dark border-secondary text-white fs-7" required value={usrPassword} onChange={(e) => setUsrPassword(e.target.value)} placeholder="Nhập mật khẩu..." />
+                            </div>
+                          )}
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Số điện thoại</label>
+                            <input type="tel" className="form-control bg-dark border-secondary text-white fs-7" required value={usrPhone} onChange={(e) => setUsrPhone(e.target.value)} placeholder="0901234567" />
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Ngày sinh</label>
+                            <input type="date" className="form-control bg-dark border-secondary text-white fs-7" required value={usrDob} onChange={(e) => setUsrDob(e.target.value)} />
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Hạng thẻ thành viên</label>
+                            <select className="form-select bg-dark border-secondary text-white fs-7" value={usrRank} onChange={(e: any) => setUsrRank(e.target.value)}>
+                              <option value="SILVER">Thẻ Bạc (SILVER)</option>
+                              <option value="GOLD">Thẻ Vàng (GOLD)</option>
+                              <option value="PLATINUM">Thẻ Bạch Kim (PLATINUM)</option>
+                            </select>
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Điểm vàng tích lũy</label>
+                            <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={usrLoyaltyPoints} onChange={(e) => setUsrLoyaltyPoints(e.target.value)} placeholder="0" />
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Tiền ký quỹ (VNĐ)</label>
+                            <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={usrDeposit} onChange={(e) => setUsrDeposit(e.target.value)} placeholder="0" />
+                          </div>
+                          <div className="col-md-4 mb-3">
+                            <label className="form-label fs-8 text-secondary">Vai trò</label>
+                            <select className="form-select bg-dark border-secondary text-white fs-7" value={usrRole} onChange={(e: any) => setUsrRole(e.target.value)}>
+                              <option value="CUSTOMER">Khách hàng (CUSTOMER)</option>
+                              <option value="ADMIN">Quản trị viên (ADMIN)</option>
+                            </select>
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label fs-8 text-secondary">Địa chỉ giao hàng 1</label>
+                            <input type="text" className="form-control bg-dark border-secondary text-white fs-7" required value={usrAddress} onChange={(e) => setUsrAddress(e.target.value)} placeholder="Địa chỉ chính..." />
+                          </div>
+                          <div className="col-md-6 mb-3">
+                            <label className="form-label fs-8 text-secondary">Địa chỉ giao hàng 2</label>
+                            <input type="text" className="form-control bg-dark border-secondary text-white fs-7" value={usrAddress2} onChange={(e) => setUsrAddress2(e.target.value)} placeholder="Địa chỉ dự phòng..." />
+                          </div>
+                          <div className="col-md-12 mb-3">
+                            <label className="form-label fs-8 text-secondary">Tài khoản ngân hàng liên kết</label>
+                            <input type="text" className="form-control bg-dark border-secondary text-white fs-7" value={usrBankAccount} onChange={(e) => setUsrBankAccount(e.target.value)} placeholder="Ví dụ: Techcombank - 1902834789..." />
+                          </div>
+                        </div>
+                        <div className="d-flex gap-2 mt-2">
+                          <button type="submit" className="btn btn-primary btn-sm px-4">{selectedUser ? 'Cập nhật' : 'Thêm mới'}</button>
+                          <button type="button" onClick={() => { setUserModalOpen(false); clearUserForm(); }} className="btn btn-outline-secondary btn-sm">Hủy</button>
+                        </div>
+                      </form>
+                    )}
+
+                    {/* Reset Password Form */}
+                    {userPasswordResetOpen && selectedUser && (
+                      <form onSubmit={handleResetPasswordSubmit} className="mb-5 bg-black p-4 rounded border border-warning">
+                        <h5 className="text-warning fs-7 mb-3">Đặt lại mật khẩu cho: {selectedUser.fullName} ({selectedUser.email})</h5>
+                        <div className="row align-items-end g-3">
+                          <div className="col-md-8">
+                            <label className="form-label fs-8 text-secondary">Mật khẩu mới</label>
+                            <input type="password" className="form-control bg-dark border-secondary text-white fs-7" required value={usrNewPassword} onChange={(e) => setUsrNewPassword(e.target.value)} placeholder="Nhập mật khẩu mới..." />
+                          </div>
+                          <div className="col-md-4 d-flex gap-2">
+                            <button type="submit" className="btn btn-warning btn-sm w-100">Xác nhận</button>
+                            <button type="button" onClick={() => { setUserPasswordResetOpen(false); setUsrNewPassword(''); }} className="btn btn-outline-secondary btn-sm w-100">Hủy</button>
+                          </div>
+                        </div>
+                      </form>
+                    )}
+
                     <div className="table-responsive rounded border border-secondary bg-black">
                       <table className="table table-dark table-striped align-middle fs-7 m-0">
                         <thead>
                           <tr>
                             <th className="ps-3">Họ tên / Email</th>
                             <th>SĐT</th>
-                            <th>Vai trò</th>
-                            <th>Hạng thẻ</th>
-                            <th>Điểm vàng</th>
+                            <th>Vai trò / Hạng</th>
+                            <th>Ký quỹ</th>
+                            <th>Thông tin phụ</th>
                             <th>Trạng thái</th>
-                            <th className="text-center">Hành động</th>
+                            <th className="text-center" style={{ width: '220px' }}>Hành động</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -848,19 +1118,27 @@ export default function AdminPage() {
                                 <small className="text-secondary">{u.email}</small>
                               </td>
                               <td>{u.phone}</td>
-                              <td><span className={`badge ${u.role==='ADMIN'?'bg-primary':'bg-secondary'}`}>{u.role}</span></td>
-                              <td><span className="badge bg-dark border border-secondary text-secondary">{u.rank}</span></td>
-                              <td className="text-warning fw-bold">{u.loyaltyPoints}</td>
+                              <td>
+                                <span className={`badge ${u.role==='ADMIN'?'bg-primary':'bg-secondary'} me-1`}>{u.role}</span>
+                                <span className="badge bg-dark border border-secondary text-secondary">{u.rank}</span>
+                              </td>
+                              <td className="text-warning fw-bold">{new Intl.NumberFormat('vi-VN').format(u.deposit || 0)}đ</td>
+                              <td>
+                                <small className="d-block text-secondary text-truncate" style={{ maxWidth: '180px' }} title={u.address2 || ''}>ĐC2: {u.address2 || '-'}</small>
+                                <small className="d-block text-secondary text-truncate" style={{ maxWidth: '180px' }} title={u.bankAccount || ''}>NH: {u.bankAccount || '-'}</small>
+                              </td>
                               <td>
                                 {u.isLocked ? <span className="text-danger">Đã khóa</span> : <span className="text-success">Hoạt động</span>}
                               </td>
                               <td className="text-center">
+                                <button onClick={() => handleEditUserClick(u)} className="btn btn-link text-primary btn-sm p-0 me-2">Sửa</button>
+                                <button onClick={() => { setSelectedUser(u); setUserPasswordResetOpen(true); }} className="btn btn-link text-warning btn-sm p-0 me-2">Đổi MK</button>
                                 {u.role !== 'ADMIN' && (
                                   <button 
                                     onClick={() => handleToggleLockUser(u.id, u.isLocked)} 
                                     className={`btn btn-link btn-sm p-0 ${u.isLocked ? 'text-success' : 'text-danger'}`}
                                   >
-                                    {u.isLocked ? 'Mở khóa' : 'Khóa tài khoản'}
+                                    {u.isLocked ? 'Mở' : 'Khóa'}
                                   </button>
                                 )}
                               </td>

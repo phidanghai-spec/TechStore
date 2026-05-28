@@ -225,4 +225,39 @@ export class AuthController {
       return res.status(400).json({ message: 'Token không hợp lệ hoặc đã hết hạn.' });
     }
   }
+
+  /**
+   * Cập nhật thông tin profile cá nhân
+   */
+  public static async updateProfile(req: AuthenticatedRequest, res: Response) {
+    const userId = req.user?.id;
+    const { fullName, phone, address, address2, bankAccount, dob } = req.body;
+
+    if (!fullName || !phone || !address || !dob) {
+      return res.status(400).json({ message: 'Họ tên, số điện thoại, địa chỉ 1, ngày sinh là các trường bắt buộc.' });
+    }
+
+    try {
+      const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: {
+          fullName,
+          phone,
+          address,
+          address2: address2 || null,
+          bankAccount: bankAccount || null,
+          dob: new Date(dob)
+        }
+      });
+
+      const { password: _, ...userWithoutPassword } = updatedUser;
+      return res.status(200).json({
+        message: 'Cập nhật thông tin tài khoản thành công.',
+        user: userWithoutPassword
+      });
+    } catch (error) {
+      console.error('Update profile error:', error);
+      return res.status(500).json({ message: 'Đã xảy ra lỗi khi cập nhật thông tin cá nhân.' });
+    }
+  }
 }

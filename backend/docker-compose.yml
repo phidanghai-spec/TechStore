@@ -1,18 +1,17 @@
 version: '3.8'
 
 services:
-  postgres:
-    image: postgres:15-alpine
-    container_name: techstore_postgres
+  mysql:
+    image: mysql:8.0
+    container_name: techstore_mysql
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: techstore
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: techstore
     ports:
-      - "5433:5432"
+      - "3306:3306"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
 
   adminer:
     image: adminer
@@ -21,7 +20,7 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      - postgres
+      - mysql
 
 volumes:
-  pgdata:
+  mysqldata:

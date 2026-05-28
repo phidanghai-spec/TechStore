@@ -60,8 +60,23 @@ export class OrderController {
         };
       });
 
-      // 2. Validate Coupon if provided
+      // 2. Calculate Rank-based Discount and Validate Coupon if provided
       let discountAmount = 0;
+      
+      if (userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { rank: true }
+        });
+        if (user) {
+          if (user.rank === 'GOLD') {
+            discountAmount = totalAmount * 0.02;
+          } else if (user.rank === 'PLATINUM') {
+            discountAmount = totalAmount * 0.05;
+          }
+        }
+      }
+
       let couponIdToUpdate: string | null = null;
 
       if (couponCode) {
@@ -81,19 +96,21 @@ export class OrderController {
           return res.status(400).json({ message: 'Mã giảm giá đã hết số lần sử dụng.' });
         }
 
-        // Calculate discount
+        // Calculate coupon discount
+        let couponDiscount = 0;
         if (coupon.discountType === 'PERCENTAGE') {
-          discountAmount = (totalAmount * coupon.discountValue) / 100;
+          couponDiscount = (totalAmount * coupon.discountValue) / 100;
         } else {
-          discountAmount = coupon.discountValue;
+          couponDiscount = coupon.discountValue;
         }
-
-        // Cap discount amount to total amount
-        if (discountAmount > totalAmount) {
-          discountAmount = totalAmount;
-        }
-
+        
+        discountAmount += couponDiscount;
         couponIdToUpdate = coupon.id;
+      }
+
+      // Cap discount amount to total amount
+      if (discountAmount > totalAmount) {
+        discountAmount = totalAmount;
       }
 
       const finalAmount = totalAmount - discountAmount;

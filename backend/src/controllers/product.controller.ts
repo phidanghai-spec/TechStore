@@ -40,7 +40,15 @@ export class ProductController {
       // Build filters
       const where: any = {
         isVisible: true,
-        stock: { gt: 0 } // Bắt buộc: Không hiển thị sản phẩm có số lượng = 0 (trừ trường hợp cụ thể)
+        OR: [
+          { stock: { gt: 0 } },
+          {
+            AND: [
+              { stock: 0 },
+              { status: 'HOT' }
+            ]
+          }
+        ]
       };
 
       if (category) {

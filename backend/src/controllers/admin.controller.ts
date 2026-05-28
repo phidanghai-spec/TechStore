@@ -185,6 +185,111 @@ export class AdminController {
     }
   }
 
+  /**
+   * Admin tạo người dùng mới
+   */
+  public static async createUser(req: Request, res: Response) {
+    const { email, password, fullName, phone, address, address2, bankAccount, dob, role, loyaltyPoints, rank, deposit } = req.body;
+
+    if (!email || !password || !fullName || !phone || !address || !dob) {
+      return res.status(400).json({ message: 'Vui lòng điền đầy đủ các trường bắt buộc: Email, mật khẩu, họ tên, số điện thoại, địa chỉ 1, ngày sinh.' });
+    }
+
+    try {
+      // Check duplicate email
+      const existingUser = await prisma.user.findUnique({ where: { email } });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Email này đã được sử dụng.' });
+      }
+
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      const user = await prisma.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          fullName,
+          phone,
+          address,
+          address2: address2 || null,
+          bankAccount: bankAccount || null,
+          dob: new Date(dob),
+          role: role || 'CUSTOMER',
+          loyaltyPoints: parseInt(loyaltyPoints || 0),
+          rank: rank || 'SILVER',
+          deposit: parseFloat(deposit || 0)
+        }
+      });
+
+      const { password: _, ...userWithoutPassword } = user;
+      return res.status(201).json({ message: 'Tạo tài khoản người dùng mới thành công.', user: userWithoutPassword });
+    } catch (error) {
+      console.error('Admin create user error:', error);
+      return res.status(500).json({ message: 'Lỗi hệ thống khi tạo người dùng.' });
+    }
+  }
+
+  /**
+   * Admin chỉnh sửa thông tin người dùng
+   */
+  public static async updateUser(req: Request, res: Response) {
+    const { id } = req.params;
+    const { fullName, phone, address, address2, bankAccount, dob, role, loyaltyPoints, rank, deposit } = req.body;
+
+    try {
+      const dataToUpdate: any = {};
+      if (fullName !== undefined) dataToUpdate.fullName = fullName;
+      if (phone !== undefined) dataToUpdate.phone = phone;
+      if (address !== undefined) dataToUpdate.address = address;
+      if (address2 !== undefined) dataToUpdate.address2 = address2 || null;
+      if (bankAccount !== undefined) dataToUpdate.bankAccount = bankAccount || null;
+      if (dob !== undefined) dataToUpdate.dob = new Date(dob);
+      if (role !== undefined) dataToUpdate.role = role;
+      if (loyaltyPoints !== undefined) dataToUpdate.loyaltyPoints = parseInt(loyaltyPoints);
+      if (rank !== undefined) dataToUpdate.rank = rank;
+      if (deposit !== undefined) dataToUpdate.deposit = parseFloat(deposit);
+
+      const user = await prisma.user.update({
+        where: { id },
+        data: dataToUpdate
+      });
+
+      const { password: _, ...userWithoutPassword } = user;
+      return res.status(200).json({ message: 'Cập nhật thông tin người dùng thành công.', user: userWithoutPassword });
+    } catch (error) {
+      console.error('Admin update user error:', error);
+      return res.status(500).json({ message: 'Lỗi hệ thống khi cập nhật người dùng.' });
+    }
+  }
+
+  /**
+   * Admin đặt lại mật khẩu cho người dùng
+   */
+  public static async resetUserPassword(req: Request, res: Response) {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp mật khẩu mới.' });
+    }
+
+    try {
+      const bcrypt = require('bcrypt');
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      await prisma.user.update({
+        where: { id },
+        data: { password: hashedPassword }
+      });
+
+      return res.status(200).json({ message: 'Đặt lại mật khẩu người dùng thành công.' });
+    } catch (error) {
+      console.error('Admin reset user password error:', error);
+      return res.status(500).json({ message: 'Lỗi hệ thống khi đặt lại mật khẩu.' });
+    }
+  }
+
   // ==========================================
   // 2.3 MÃ KHUYẾN MÃI
   // ==========================================
@@ -404,7 +509,23 @@ export class AdminController {
       // Xử lý công nợ tự động: Nếu COD giao thành công mà chưa thu tiền -> isDebt = true
       if (orderStatus === 'DELIVERED') {
         if (order.paymentMethod === 'COD' && order.paymentStatus === 'PENDING') {
-          updateData.isDebt = true; // Ghi nhận công nợ nhân viên/bên vận chuyển chưa nộp tiền
+          // Bắt buộc: kiểm tra xem khách hàng có tiền ký quỹ hay không để được nợ tiền
+          if (!order.userId) {
+            return res.status(400).json({ message: 'Khách hàng vãng lai không được phép nợ tiền. Phải thu tiền khi giao hàng thành công.' });
+          }
+          
+          const user = await prisma.user.findUnique({
+            where: { id: order.userId }
+          });
+          
+          if (!user || user.deposit < order.totalAmount) {
+            const currentDeposit = user ? user.deposit : 0;
+            return res.status(400).json({ 
+              message: `Khách hàng không đủ tiền ký quỹ để được giao hàng chưa thu tiền (Cần ký quỹ: ${order.totalAmount.toLocaleString('vi-VN')}đ, Hiện có: ${currentDeposit.toLocaleString('vi-VN')}đ).` 
+            });
+          }
+          
+          updateData.isDebt = true; // Ghi nhận công nợ
         } else {
           updateData.paymentStatus = 'PAID';
         }
@@ -434,10 +555,47 @@ export class AdminController {
         return res.status(200).json({ message: 'Đã hủy đơn hàng và hoàn trả lại số lượng tồn kho sản phẩm.' });
       }
 
-      // Cập nhật thông thường
-      const updatedOrder = await prisma.order.update({
-        where: { id },
-        data: updateData
+      // Cập nhật thông thường và tự động kích hoạt bảo hành
+      const updatedOrder = await prisma.$transaction(async (tx) => {
+        const ord = await tx.order.update({
+          where: { id },
+          data: updateData
+        });
+
+        // Tạo bảo hành nếu giao hàng thành công
+        if (orderStatus === 'DELIVERED' && order.orderStatus !== 'DELIVERED') {
+          for (const item of order.items) {
+            const warrantyCode = `BH-${order.id.substring(0, 8).toUpperCase()}-${item.productId.substring(0, 4).toUpperCase()}`;
+            
+            const existingWarranty = await tx.warranty.findUnique({
+              where: { warrantyCode }
+            });
+
+            if (!existingWarranty) {
+              const startDate = new Date();
+              const endDate = new Date();
+              endDate.setMonth(startDate.getMonth() + 12); // Mặc định bảo hành 12 tháng
+
+              await tx.warranty.create({
+                data: {
+                  orderId: order.id,
+                  productId: item.productId,
+                  userId: order.userId,
+                  customerName: order.customerName,
+                  customerPhone: order.customerPhone,
+                  warrantyCode,
+                  durationMonths: 12,
+                  startDate,
+                  endDate,
+                  status: 'ACTIVE',
+                  notes: 'Kích hoạt bảo hành tự động sau khi giao hàng thành công.'
+                }
+              });
+            }
+          }
+        }
+
+        return ord;
       });
 
       return res.status(200).json({ message: 'Cập nhật trạng thái đơn hàng thành công.', order: updatedOrder });
