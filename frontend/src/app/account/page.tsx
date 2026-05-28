@@ -556,15 +556,19 @@ export default function AccountPage() {
                     <button onClick={() => setActiveTab('profile')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'profile' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                       👤 Thông tin cá nhân
                     </button>
-                    <button onClick={() => setActiveTab('orders')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'orders' ? 'text-primary fw-bold' : 'text-secondary'}`}>
-                      📦 Lịch sử mua hàng
-                    </button>
-                    <button onClick={() => setActiveTab('warranties')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'warranties' ? 'text-primary fw-bold' : 'text-secondary'}`}>
-                      🛡 Bảo hành sản phẩm
-                    </button>
-                    <button onClick={() => setActiveTab('loyalty')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'loyalty' ? 'text-primary fw-bold' : 'text-secondary'}`}>
-                      💎 Khách hàng thân thiết
-                    </button>
+                    {user?.role !== 'ADMIN' && (
+                      <>
+                        <button onClick={() => setActiveTab('orders')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'orders' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                          📦 Lịch sử mua hàng
+                        </button>
+                        <button onClick={() => setActiveTab('warranties')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'warranties' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                          🛡 Bảo hành sản phẩm
+                        </button>
+                        <button onClick={() => setActiveTab('loyalty')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'loyalty' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                          💎 Khách hàng thân thiết
+                        </button>
+                      </>
+                    )}
                     <button onClick={() => setActiveTab('security')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'security' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                       🔑 Đổi mật khẩu / Bảo mật
                     </button>
@@ -660,7 +664,16 @@ export default function AccountPage() {
                                 {order.items.map((item: any, k: number) => (
                                   <div key={k} className="d-flex justify-content-between align-items-center fs-7 border-bottom border-dark py-2">
                                     <div className="d-flex align-items-center gap-2">
-                                      <img src={item.product?.imageUrl} width="40" height="40" className="rounded" style={{ objectFit: 'contain' }} />
+                                      <img 
+                                        src={item.product?.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                                        width="40" 
+                                        height="40" 
+                                        className="rounded" 
+                                        style={{ objectFit: 'contain' }} 
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                                        }}
+                                      />
                                       <span className="text-secondary">{item.product?.name}</span>
                                       <span className="text-secondary fs-8">x{item.quantity}</span>
                                     </div>
@@ -796,7 +809,16 @@ export default function AccountPage() {
                                 <tr key={i}>
                                   <td className="ps-3">
                                     <div className="d-flex align-items-center gap-2">
-                                      <img src={w.product?.imageUrl} width="35" height="35" className="rounded" style={{ objectFit: 'contain' }} />
+                                      <img 
+                                        src={w.product?.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                                        width="35" 
+                                        height="35" 
+                                        className="rounded" 
+                                        style={{ objectFit: 'contain' }} 
+                                        onError={(e) => {
+                                          (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                                        }}
+                                      />
                                       <span className="text-white fw-bold">{w.product?.name}</span>
                                     </div>
                                   </td>

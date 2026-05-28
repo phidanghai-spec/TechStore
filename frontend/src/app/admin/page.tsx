@@ -892,7 +892,16 @@ export default function AdminPage() {
                             <tr key={i}>
                               <td className="ps-3">
                                 <div className="d-flex align-items-center gap-2">
-                                  <img src={p.imageUrl} width="35" height="35" className="rounded" style={{ objectFit: 'contain' }} />
+                                  <img 
+                                    src={p.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                                    width="35" 
+                                    height="35" 
+                                    className="rounded" 
+                                    style={{ objectFit: 'contain' }} 
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                                    }}
+                                  />
                                   <span className="text-white text-truncate" style={{ maxWidth: '150px' }}>{p.name}</span>
                                 </div>
                               </td>
@@ -1120,7 +1129,7 @@ export default function AdminPage() {
                               <td>{u.phone}</td>
                               <td>
                                 <span className={`badge ${u.role==='ADMIN'?'bg-primary':'bg-secondary'} me-1`}>{u.role}</span>
-                                <span className="badge bg-dark border border-secondary text-secondary">{u.rank}</span>
+                                {u.role === 'CUSTOMER' && <span className="badge bg-dark border border-secondary text-secondary">{u.rank}</span>}
                               </td>
                               <td className="text-warning fw-bold">{new Intl.NumberFormat('vi-VN').format(u.deposit || 0)}đ</td>
                               <td>

@@ -91,7 +91,15 @@ export default function CartPage() {
                           {/* Image */}
                           <td className="ps-3 py-3">
                             <div className="bg-black p-1 rounded d-flex align-items-center justify-content-center" style={{ width: '70px', height: '70px' }}>
-                              <img src={item.imageUrl} alt={item.name} className="img-fluid max-h-100" style={{ objectFit: 'contain' }} />
+                              <img 
+                                src={item.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                                alt={item.name} 
+                                className="img-fluid max-h-100" 
+                                style={{ objectFit: 'contain' }} 
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                                }}
+                              />
                             </div>
                           </td>
                           {/* Name */}

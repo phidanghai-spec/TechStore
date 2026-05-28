@@ -115,6 +115,8 @@ export default function ChatWidget() {
 
     socketRef.current.emit('send_message', {
       senderId: user?.id || customerEmail, // use email for guest identifier
+      senderName: customerName || 'Khách vãng lai',
+      senderEmail: customerEmail || 'guest@techstore.vn',
       receiverId: adminId,
       message: inputMessage.trim(),
       roomId

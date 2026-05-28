@@ -243,10 +243,13 @@ export default function ProductDetailPage({ params }: { params: any }) {
                   )
                 )}
                 <img 
-                  src={product.imageUrl} 
+                  src={product.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
                   alt={product.name} 
                   className="img-fluid" 
                   style={{ maxHeight: '380px', objectFit: 'contain', width: 'auto' }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                  }}
                 />
               </div>
             </div>

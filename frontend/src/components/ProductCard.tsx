@@ -108,11 +108,14 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="image-holder position-relative overflow-hidden rounded bg-dark d-flex align-items-center justify-content-center" style={{ height: '220px' }}>
           <Link href={`/product/${slug}`} className="w-100 h-100 d-flex align-items-center justify-content-center">
             <img 
-              src={imageUrl} 
+              src={imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
               alt={name} 
               className="product-image img-fluid max-h-100 transition-transform duration-300 hover-scale"
               style={{ objectFit: 'contain', maxHeight: '100%', width: 'auto' }}
               loading="lazy"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+              }}
             />
           </Link>
         </div>
