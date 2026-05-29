@@ -39,6 +39,11 @@ app.get('/', (req, res) => {
   res.json({ message: 'Chào mừng bạn đến với API của TechStore!' });
 });
 
+// Health check for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
 // Import and Register Routes
 import authRoutes from './routes/auth.routes';
 import productRoutes from './routes/product.routes';
