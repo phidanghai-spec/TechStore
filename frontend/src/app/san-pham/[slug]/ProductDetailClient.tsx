@@ -3,14 +3,13 @@
 import { useState, useEffect } from 'react';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
-import ChatWidget from '../../../components/ChatWidget';
+import dynamic from 'next/dynamic';
+const ChatWidget = dynamic(() => import('../../../components/ChatWidget'), { ssr: false });
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
-export default function ProductDetailPage({ params }: { params: any }) {
-  const [slug, setSlug] = useState<string | null>(null);
-  const [product, setProduct] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export default function ProductDetailClient({ initialProduct }: { initialProduct: any }) {
+  const [product, setProduct] = useState<any>(initialProduct);
   const [quantity, setQuantity] = useState(1);
   const [user, setUser] = useState<any>(null);
 
@@ -25,15 +24,6 @@ export default function ProductDetailPage({ params }: { params: any }) {
   const [qnaError, setQnaError] = useState('');
   const [qnaSuccess, setQnaSuccess] = useState('');
 
-  // Resolve params slug safely for Next.js compatibility
-  useEffect(() => {
-    if (params) {
-      Promise.resolve(params).then((resolved) => {
-        setSlug(resolved.slug);
-      });
-    }
-  }, [params]);
-
   // Load user from localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -46,41 +36,19 @@ export default function ProductDetailPage({ params }: { params: any }) {
     }
   }, []);
 
-  // Fetch product detail
+  // Fetch product detail (to refresh reviews/Q&As after submission)
   const fetchProductDetail = async () => {
-    if (!slug) return;
-    setIsLoading(true);
+    if (!product || !product.slug) return;
     try {
-      const res = await fetch(`${BACKEND_URL}/api/products/${slug}`);
+      const res = await fetch(`${BACKEND_URL}/api/products/${product.slug}`);
       if (res.ok) {
         const data = await res.json();
         setProduct(data);
-      } else {
-        setProduct(null);
       }
     } catch (err) {
       console.error(err);
-      setProduct(null);
-    } finally {
-      setIsLoading(false);
     }
   };
-
-  useEffect(() => {
-    fetchProductDetail();
-  }, [slug]);
-
-  if (isLoading) {
-    return (
-      <>
-        <Header />
-        <div className="text-center py-5 text-white bg-black min-vh-50 d-flex align-items-center justify-content-center">
-          <p className="fs-5">Đang tải chi tiết sản phẩm TechStore...</p>
-        </div>
-        <Footer />
-      </>
-    );
-  }
 
   if (!product) {
     return (

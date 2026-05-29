@@ -8,6 +8,7 @@ export class ProductController {
   public static async getCategories(req: Request, res: Response) {
     try {
       const categories = await prisma.category.findMany();
+      res.setHeader('Cache-Control', 'public, max-age=3600, s-maxage=86400');
       return res.status(200).json(categories);
     } catch (error) {
       console.error('Get categories error:', error);
@@ -155,6 +156,7 @@ export class ProductController {
         };
       });
 
+      res.setHeader('Cache-Control', 'public, max-age=15, s-maxage=60');
       return res.status(200).json({
         products: productsWithRating,
         pagination: {

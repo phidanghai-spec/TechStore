@@ -32,21 +32,43 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   try {
-    // Fetch products list for dynamic sitemap url mapping
-    const res = await fetch(`${BACKEND_URL}/api/products?limit=100`);
-    if (res.ok) {
-      const data = await res.json();
-      const productUrls = (data.products || []).map((p: any) => ({
-        url: `${FRONTEND_URL}/product/${p.slug}`,
-        lastModified: new Date(p.updatedAt || new Date()),
-        changeFrequency: 'weekly' as const,
-        priority: 0.7,
-      }));
-      
-      return [...routes, ...productUrls];
+    // 1. Fetch categories dynamically
+    let categoryUrls: any[] = [];
+    try {
+      const catRes = await fetch(`${BACKEND_URL}/api/products/categories`);
+      if (catRes.ok) {
+        const cats = await catRes.json();
+        categoryUrls = cats.map((cat: any) => ({
+          url: `${FRONTEND_URL}/shop?category=${cat.slug}`,
+          lastModified: new Date(),
+          changeFrequency: 'weekly' as const,
+          priority: 0.8,
+        }));
+      }
+    } catch (e) {
+      console.warn('Failed to fetch categories for sitemap');
     }
+
+    // 2. Fetch products dynamically
+    let productUrls: any[] = [];
+    try {
+      const prodRes = await fetch(`${BACKEND_URL}/api/products?limit=150`);
+      if (prodRes.ok) {
+        const data = await prodRes.json();
+        productUrls = (data.products || []).map((p: any) => ({
+          url: `${FRONTEND_URL}/san-pham/${p.slug}`,
+          lastModified: new Date(p.updatedAt || new Date()),
+          changeFrequency: 'weekly' as const,
+          priority: 0.7,
+        }));
+      }
+    } catch (e) {
+      console.warn('Failed to fetch products for sitemap');
+    }
+    
+    return [...routes, ...categoryUrls, ...productUrls];
   } catch (err) {
-    console.warn('Failed to fetch products for sitemap, using static routes only.');
+    console.warn('Failed to fetch products or categories for sitemap, using static routes only.');
   }
 
   return routes;

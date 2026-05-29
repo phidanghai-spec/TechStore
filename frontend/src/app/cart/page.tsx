@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
-import ChatWidget from '../../components/ChatWidget';
+import dynamic from 'next/dynamic';
+const ChatWidget = dynamic(() => import('../../components/ChatWidget'), { ssr: false });
 
 export default function CartPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);

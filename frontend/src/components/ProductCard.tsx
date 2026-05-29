@@ -1,6 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { useState } from 'react';
 
 interface ProductCardProps {
   product: {
@@ -31,6 +33,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     avgRating = 5,
     ratingsCount = 0
   } = product;
+
+  // Image fallback state
+  const [imgSrc, setImgSrc] = useState(imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore');
 
   // Calculate discount percentage
   const discountPercent = originalPrice > salePrice 
@@ -106,15 +111,16 @@ export default function ProductCard({ product }: ProductCardProps) {
 
         {/* Product Image Link */}
         <div className="image-holder position-relative overflow-hidden rounded bg-dark d-flex align-items-center justify-content-center" style={{ height: '220px' }}>
-          <Link href={`/product/${slug}`} className="w-100 h-100 d-flex align-items-center justify-content-center">
-            <img 
-              src={imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+          <Link href={`/san-pham/${slug}`} className="w-100 h-100 d-flex align-items-center justify-content-center position-relative">
+            <Image 
+              src={imgSrc} 
               alt={name} 
-              className="product-image img-fluid max-h-100 transition-transform duration-300 hover-scale"
-              style={{ objectFit: 'contain', maxHeight: '100%', width: 'auto' }}
-              loading="lazy"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+              fill
+              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+              className="product-image transition-transform duration-300 hover-scale"
+              style={{ objectFit: 'contain', padding: '10px' }}
+              onError={() => {
+                setImgSrc('https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore');
               }}
             />
           </Link>
@@ -125,7 +131,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div>
             <span className="text-secondary fs-8 uppercase d-block">{brand}</span>
             <h6 className="fs-6 mt-1 mb-2">
-              <Link href={`/product/${slug}`} className="text-white text-decoration-none text-hover-primary line-clamp-2">
+              <Link href={`/san-pham/${slug}`} className="text-white text-decoration-none text-hover-primary line-clamp-2">
                 {name}
               </Link>
             </h6>

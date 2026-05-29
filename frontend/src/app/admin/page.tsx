@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { io, Socket } from 'socket.io-client';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import dynamic from 'next/dynamic';
+
+const RevenueChart = dynamic(() => import('../../components/RevenueChart'), {
+  ssr: false,
+  loading: () => <div className="text-center py-5 text-secondary">Đang tải biểu đồ doanh thu...</div>
+});
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -790,17 +795,7 @@ export default function AdminPage() {
 
                         {/* Chart */}
                         <h5 className="text-white fs-7 mb-3">Biểu đồ doanh thu theo thời gian</h5>
-                        <div style={{ width: '100%', height: 300 }}>
-                          <ResponsiveContainer>
-                            <LineChart data={stats.chartData}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#222" />
-                              <XAxis dataKey="date" stroke="#888" />
-                              <YAxis stroke="#888" />
-                              <Tooltip contentStyle={{ backgroundColor: '#222', borderColor: '#444', color: '#fff' }} />
-                              <Line type="monotone" dataKey="revenue" stroke="#0d6efd" strokeWidth={3} name="Doanh thu (VNĐ)" />
-                            </LineChart>
-                          </ResponsiveContainer>
-                        </div>
+                        <RevenueChart data={stats.chartData} />
                       </>
                     ) : <p>Lỗi tải dữ liệu.</p>}
                   </div>
