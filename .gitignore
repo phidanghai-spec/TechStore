@@ -68,3 +68,17 @@ Desktop.ini
 .cache/
 tmp/
 temp/
+
+# Backend
+backend/.env
+backend/node_modules/
+backend/dist/
+
+# Frontend  
+frontend/.env
+frontend/.env.local
+frontend/node_modules/
+frontend/.next/
+
+# Docker
+docker-compose.override.yml

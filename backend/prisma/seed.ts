@@ -1764,7 +1764,7 @@ async function main() {
       };
     });
 
-    let paymentStatus = PaymentStatus.PENDING;
+    let paymentStatus: PaymentStatus = PaymentStatus.PENDING;
     let isDebt = false;
     let deliveryStaff = null;
 

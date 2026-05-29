@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { io, Socket } from 'socket.io-client';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || BACKEND_URL;
 
 export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
@@ -48,7 +49,7 @@ export default function ChatWidget() {
     if (!isOpen || !isRegistered || !customerName) return;
 
     // Connect to Socket.io Server
-    const socket = io(BACKEND_URL, {
+    const socket = io(SOCKET_URL, {
       withCredentials: true
     });
     socketRef.current = socket;

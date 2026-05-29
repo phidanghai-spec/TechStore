@@ -3,13 +3,19 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+const smtpHost = process.env.EMAIL_HOST || process.env.SMTP_HOST || 'smtp.gmail.com';
+const smtpPort = process.env.EMAIL_PORT || process.env.SMTP_PORT || '587';
+const smtpUser = process.env.EMAIL_USER || process.env.SMTP_USER;
+const smtpPass = process.env.EMAIL_PASS || process.env.SMTP_PASS;
+const smtpFrom = process.env.EMAIL_USER || process.env.SMTP_USER || 'support@techstore.vn';
+
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_PORT || '587'),
-  secure: process.env.EMAIL_PORT === '465', // true for 465, false for other ports
+  host: smtpHost,
+  port: parseInt(smtpPort),
+  secure: smtpPort === '465', // true for 465, false for other ports
   auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
+    user: smtpUser,
+    pass: smtpPass,
   },
 });
 
@@ -21,7 +27,7 @@ export class MailService {
     const resetLink = `${clientUrl}/reset-password?token=${token}`;
     
     const mailOptions = {
-      from: `"TechStore Support" <${process.env.EMAIL_USER}>`,
+      from: `"TechStore Support" <${smtpFrom}>`,
       to: email,
       subject: '[TechStore] Yêu cầu khôi phục mật khẩu tài khoản của bạn',
       html: `
@@ -77,7 +83,7 @@ export class MailService {
     `).join('');
 
     const mailOptions = {
-      from: `"TechStore Store" <${process.env.EMAIL_USER}>`,
+      from: `"TechStore Store" <${smtpFrom}>`,
       to: email,
       subject: `[TechStore] Xác nhận đơn hàng thành công #${order.id.substring(0, 8).toUpperCase()}`,
       html: `

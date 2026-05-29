@@ -13,6 +13,7 @@ const RevenueChart = dynamic(() => import('../../components/RevenueChart'), {
 });
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || BACKEND_URL;
 
 export default function AdminPage() {
   const router = useRouter();
@@ -629,7 +630,7 @@ export default function AdminPage() {
   // REAL-TIME CHAT LOGIC FOR ADMIN
   // ==========================================
   const initChatSocket = () => {
-    const socket = io(BACKEND_URL, { withCredentials: true });
+    const socket = io(SOCKET_URL, { withCredentials: true });
     socketRef.current = socket;
 
     // Listen for new messages globally

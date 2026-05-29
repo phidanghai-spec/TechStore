@@ -6,25 +6,15 @@ export class SocketService {
   private static io: SocketIOServer | null = null;
 
   public static init(httpServer: HTTPServer, frontendUrl: string): SocketIOServer {
-    const allowedOrigins = [frontendUrl, 'http://localhost:3000'];
+    const allowedOrigins = [
+      'http://localhost:3000',
+      process.env.FRONTEND_URL,
+      /https:\/\/.*\.vercel\.app$/
+    ].filter(Boolean);
 
     this.io = new SocketIOServer(httpServer, {
       cors: {
-        origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          
-          const isAllowed = allowedOrigins.some(o => 
-            origin === o || 
-            (o.includes('vercel.app') && origin.endsWith('.vercel.app')) ||
-            (origin.includes('vercel.app') && origin.endsWith('vercel.app'))
-          );
-
-          if (isAllowed || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-            callback(null, true);
-          } else {
-            callback(new Error('Not allowed by CORS'));
-          }
-        },
+        origin: allowedOrigins as any,
         methods: ['GET', 'POST'],
         credentials: true
       }

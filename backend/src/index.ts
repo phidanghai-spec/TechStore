@@ -13,28 +13,16 @@ const server = http.createServer(app);
 const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
-const allowedOrigins = [FRONTEND_URL, 'http://localhost:3000'];
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+  /https:\/\/.*\.vercel\.app$/
+].filter(Boolean);
 
 // Middlewares
 app.use(compression());
 app.use(cors({
-  origin: (origin, callback) => {
-    // Allow server-to-server or curl requests
-    if (!origin) return callback(null, true);
-    
-    const isAllowed = allowedOrigins.some(o => 
-      origin === o || 
-      (o.includes('vercel.app') && origin.endsWith('.vercel.app')) ||
-      (origin.includes('vercel.app') && origin.endsWith('vercel.app'))
-    );
-
-    if (isAllowed || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  origin: allowedOrigins as any,
   credentials: true
 }));
 app.use(express.json());
