@@ -1,4 +1,4 @@
-import { PrismaClient, Role, Rank, ProductStatus } from '@prisma/client';
+import { PrismaClient, Role, Rank, ProductStatus, OrderStatus, PaymentMethod, PaymentStatus } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
@@ -21,8 +21,8 @@ async function main() {
 
   // 2. Create Users
   const saltRounds = 10;
-  const adminPasswordHash = await bcrypt.hash('admin123', saltRounds);
-  const customerPasswordHash = await bcrypt.hash('customer123', saltRounds);
+  const adminPasswordHash = await bcrypt.hash('Admin@123', saltRounds);
+  const customerPasswordHash = await bcrypt.hash('Test@123', saltRounds);
 
   // Admin User
   const admin = await prisma.user.create({
@@ -40,7 +40,7 @@ async function main() {
   // Loyalty Customers
   const customerSilver = await prisma.user.create({
     data: {
-      email: 'silver@gmail.com',
+      email: 'silver@test.vn',
       fullName: 'Nguyễn Văn Bạc',
       phone: '0901234567',
       password: customerPasswordHash,
@@ -57,7 +57,7 @@ async function main() {
  
   const customerGold = await prisma.user.create({
     data: {
-      email: 'gold@gmail.com',
+      email: 'gold@test.vn',
       fullName: 'Trần Thị Vàng',
       phone: '0912345678',
       password: customerPasswordHash,
@@ -74,7 +74,7 @@ async function main() {
  
   const customerPlatinum = await prisma.user.create({
     data: {
-      email: 'platinum@gmail.com',
+      email: 'platinum@test.vn',
       fullName: 'Phạm Bạch Kim',
       phone: '0923456789',
       password: customerPasswordHash,
@@ -94,7 +94,7 @@ async function main() {
   // 3. Create Coupons
   const coupon1 = await prisma.coupon.create({
     data: {
-      code: 'TECHSTORENEW',
+      code: 'SALE10',
       discountType: 'PERCENTAGE',
       discountValue: 10, // 10% off
       maxUsage: 100,
@@ -105,9 +105,20 @@ async function main() {
 
   const coupon2 = await prisma.coupon.create({
     data: {
-      code: 'GIAM500K',
+      code: 'GIAM50K',
       discountType: 'FIXED',
-      discountValue: 500000, // 500k off
+      discountValue: 50000, // 50k off
+      maxUsage: 100,
+      usedCount: 0,
+      expiryDate: new Date('2027-12-31'),
+    },
+  });
+
+  const coupon3 = await prisma.coupon.create({
+    data: {
+      code: 'VIP15',
+      discountType: 'PERCENTAGE',
+      discountValue: 15, // 15% off
       maxUsage: 50,
       usedCount: 0,
       expiryDate: new Date('2027-12-31'),
@@ -154,7 +165,7 @@ async function main() {
       salePrice: 33990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1727371754854-47702de29202?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-desert-titanium-select?wid=1000&hei=1000&fmt=jpeg&qlt=90&.v=1724427848777',
       brand: 'Apple',
       tags: 'iphone, apple, ios, 16 pro max, 256gb, flagship',
       description: JSON.stringify({
@@ -315,7 +326,7 @@ async function main() {
       salePrice: 25990000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1610945415295-d9bca100d457?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80',
       brand: 'Samsung',
       tags: 'samsung, galaxy, s25 plus, android, 256gb',
       description: JSON.stringify({
@@ -384,7 +395,7 @@ async function main() {
       salePrice: 7490000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1558885561-56c2a4972686?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1565630916779-e303be97b6f5?w=800&auto=format&fit=crop&q=80',
       brand: 'Samsung',
       tags: 'samsung, galaxy, a36, 5g, android, gia re',
       description: JSON.stringify({
@@ -407,7 +418,7 @@ async function main() {
       salePrice: 44990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1651817482811-37d45f3c5b52?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1609081219090-a6d81d3085bf?w=800&auto=format&fit=crop&q=80',
       brand: 'Samsung',
       tags: 'samsung, fold, fold 6, man hinh gap, 512gb, flagship',
       description: JSON.stringify({
@@ -814,7 +825,7 @@ async function main() {
       salePrice: 14990000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1496181130204-7552cc1524e2?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1588872657578-7efd1f1555ed?w=800&auto=format&fit=crop&q=80',
       brand: 'ASUS',
       tags: 'asus, vivobook, i5, 8gb, sinh vien, best seller',
       description: JSON.stringify({
@@ -879,7 +890,7 @@ async function main() {
       salePrice: 6490000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1588449668338-d1345b11a4f1?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=1000&hei=1000&fmt=jpeg&qlt=95&.v=1660803972361',
       brand: 'Apple',
       tags: 'airpods, apple, tai nghe bluetooth, anc, hot',
       description: JSON.stringify({
@@ -1117,7 +1128,7 @@ async function main() {
       salePrice: 22990000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1517502884422-41eaaced0168?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop&q=80',
       brand: 'Apple',
       tags: 'apple watch, ultra 2, smartwatch, premium',
       description: JSON.stringify({
@@ -1217,7 +1228,7 @@ async function main() {
       salePrice: 3490000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1517502884422-41eaaced0168?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=800&auto=format&fit=crop&q=80',
       brand: 'Amazfit',
       tags: 'amazfit, gtr 4, gia tot',
       description: JSON.stringify({
@@ -1238,7 +1249,7 @@ async function main() {
       salePrice: 1190000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1622445262465-2481c4574875?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=800&auto=format&fit=crop&q=80',
       brand: 'Apple',
       tags: 'sac apple, sac 35w, cu sac, apple, dual usb-c, best seller',
       description: JSON.stringify({
@@ -1310,7 +1321,7 @@ async function main() {
       salePrice: 1490000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1609592424368-2c06277ff2aa?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1624996379697-f01d168b1a52?w=800&auto=format&fit=crop&q=80',
       brand: 'Anker',
       tags: 'pin du phong, powerbank, anker, 20000mah, 65w, hot',
       description: JSON.stringify({
@@ -1493,7 +1504,7 @@ async function main() {
       salePrice: 490000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1584438784894-089d6a128f3e?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&auto=format&fit=crop&q=80',
       brand: 'Belkin',
       tags: 'phu kien, gia do dien thoai, belkin',
       description: JSON.stringify({
@@ -1704,6 +1715,240 @@ async function main() {
     await prisma.product.create({
       data: product
     });
+  }
+
+  // 6. Create Demo Orders, Reviews, Q&As, and Chat history
+  console.log('Seeding demo orders, reviews, Q&As, and chats...');
+  
+  const dbProducts = await prisma.product.findMany();
+  const dbUsers = await prisma.user.findMany({
+    where: { role: Role.CUSTOMER }
+  });
+
+  const orderStatuses = [
+    OrderStatus.DELIVERED, OrderStatus.DELIVERED, OrderStatus.DELIVERED, OrderStatus.DELIVERED,
+    OrderStatus.DELIVERED, OrderStatus.DELIVERED, OrderStatus.DELIVERED, OrderStatus.DELIVERED,
+    OrderStatus.PENDING, OrderStatus.APPROVED, OrderStatus.SHIPPING,
+    OrderStatus.CANCELLED, OrderStatus.CANCELLED
+  ]; // High delivered rate
+
+  const paymentMethods = [
+    PaymentMethod.COD, PaymentMethod.COD, PaymentMethod.COD,
+    PaymentMethod.MOMO, PaymentMethod.PAYPAL
+  ]; // COD is 60%
+
+  for (let i = 0; i < 25; i++) {
+    const user = dbUsers[i % dbUsers.length];
+    const status = orderStatuses[Math.floor(Math.random() * orderStatuses.length)];
+    const method = paymentMethods[Math.floor(Math.random() * paymentMethods.length)];
+    
+    // Random date within the last 30 days
+    const orderDate = new Date();
+    orderDate.setDate(orderDate.getDate() - Math.floor(Math.random() * 30));
+    orderDate.setHours(Math.floor(Math.random() * 24), Math.floor(Math.random() * 60));
+
+    // Choose 1-3 random products
+    const itemsCount = Math.floor(Math.random() * 3) + 1;
+    const shuffledProducts = [...dbProducts].sort(() => 0.5 - Math.random());
+    const selectedProducts = shuffledProducts.slice(0, itemsCount);
+
+    let total = 0;
+    const orderItemsData = selectedProducts.map(p => {
+      const quantity = Math.floor(Math.random() * 2) + 1;
+      const price = p.salePrice;
+      total += price * quantity;
+      return {
+        productId: p.id,
+        quantity,
+        price
+      };
+    });
+
+    let paymentStatus = PaymentStatus.PENDING;
+    let isDebt = false;
+    let deliveryStaff = null;
+
+    if (status === OrderStatus.DELIVERED) {
+      if (method === PaymentMethod.COD) {
+        // 70% of COD delivered orders are paid, 30% are pending debt
+        if (Math.random() < 0.3) {
+          paymentStatus = PaymentStatus.PENDING;
+          isDebt = true;
+          deliveryStaff = 'Nguyễn Văn Shipper';
+        } else {
+          paymentStatus = PaymentStatus.PAID;
+        }
+      } else {
+        paymentStatus = PaymentStatus.PAID;
+      }
+    } else if (status === OrderStatus.CANCELLED) {
+      paymentStatus = PaymentStatus.FAILED;
+    } else if (method !== PaymentMethod.COD && status !== OrderStatus.PENDING) {
+      paymentStatus = PaymentStatus.PAID;
+    }
+
+    const order = await prisma.order.create({
+      data: {
+        userId: user.id,
+        customerName: user.fullName,
+        customerPhone: user.phone,
+        customerEmail: user.email,
+        customerAddress: user.address,
+        paymentMethod: method,
+        paymentStatus,
+        orderStatus: status,
+        totalAmount: total,
+        discountAmount: 0,
+        isDebt,
+        deliveryStaff,
+        createdAt: orderDate,
+        updatedAt: orderDate,
+        items: {
+          create: orderItemsData
+        }
+      },
+      include: {
+        items: true
+      }
+    });
+
+    // Create warranty for delivered items
+    if (status === OrderStatus.DELIVERED) {
+      for (const item of order.items) {
+        const warrantyStart = orderDate;
+        const warrantyEnd = new Date(warrantyStart);
+        warrantyEnd.setFullYear(warrantyEnd.getFullYear() + 1); // 1 year warranty
+        
+        await prisma.warranty.create({
+          data: {
+            orderId: order.id,
+            productId: item.productId,
+            userId: user.id,
+            customerName: user.fullName,
+            customerPhone: user.phone,
+            warrantyCode: `BH-${order.id.substring(0, 8)}-${item.productId.substring(0, 4)}`.toUpperCase(),
+            durationMonths: 12,
+            startDate: warrantyStart,
+            endDate: warrantyEnd,
+            status: 'ACTIVE',
+            notes: 'Kích hoạt bảo hành điện tử tự động.'
+          }
+        });
+      }
+    }
+  }
+
+  // Reviews
+  const comments = [
+    "Sản phẩm dùng cực kỳ ổn định, đóng gói kỹ càng.",
+    "Thiết kế rất sang trọng và đẳng cấp, xứng tầm phân khúc.",
+    "Giao hàng nhanh trong ngày, nhân viên tư vấn nhiệt tình.",
+    "Trải nghiệm tuyệt vời, pin dùng siêu trâu và sạc nhanh.",
+    "Camera chụp hình sắc nét dã man, zoom xa vẫn rất rõ chi tiết.",
+    "Cấu hình quá mạnh, chiến game AAA mượt mà không bị giật lag.",
+    "Chống ồn cực tốt, âm thanh chi tiết, bass lực và sâu.",
+    "Màn hình OLED hiển thị siêu đẹp, coi phim cực kỳ đã mắt.",
+    "Máy siêu mỏng nhẹ, pin trâu phù hợp làm việc di động.",
+    "Đồng hồ thông minh đẹp, pin trâu 3 ngày, theo dõi sức khỏe rất tốt.",
+    "Bộ sạc cáp chất lượng cao, sạc mát máy và không bị chập chờn.",
+    "TechStore phục vụ rất chu đáo, mình sẽ tiếp tục ủng hộ shop."
+  ];
+
+  for (let r = 0; r < comments.length; r++) {
+    const user = dbUsers[Math.floor(Math.random() * dbUsers.length)];
+    const product = dbProducts[Math.floor(Math.random() * dbProducts.length)];
+    await prisma.productReview.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        rating: Math.floor(Math.random() * 2) + 4, // 4-5 stars
+        comment: comments[r],
+        isApproved: true,
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 15) * 24 * 60 * 60 * 1000)
+      }
+    });
+  }
+
+  // QnAs
+  const qnaPairs = [
+    {
+      question: "MacBook bên mình có cài đặt sẵn các phần mềm Office không shop?",
+      answer: "Chào bạn, TechStore hỗ trợ cài đặt miễn phí các phần mềm văn phòng cơ bản như Office, Chrome, gõ tiếng Việt... khi bạn mua máy nhé."
+    },
+    {
+      question: "Hạng thành viên Bạch Kim được giảm trực tiếp bao nhiêu khi thanh toán vậy ạ?",
+      answer: "Dạ chào bạn, thành viên Bạch Kim sẽ được chiết khấu trực tiếp 5% tổng giá trị đơn hàng khi thanh toán nhé."
+    },
+    {
+      question: "Sản phẩm này có hỗ trợ trả góp qua Home Credit không shop?",
+      answer: "Chào bạn, bên mình hỗ trợ trả góp qua cả thẻ tín dụng và công ty tài chính (Home Credit, FE Credit) nhé."
+    },
+    {
+      question: "Chính sách lỗi 1 đổi 1 của shop áp dụng trong bao lâu ạ?",
+      answer: "Chào bạn, TechStore áp dụng chính sách 1 đổi 1 trong vòng 30 ngày đầu nếu có lỗi phần cứng từ nhà sản xuất."
+    },
+    {
+      question: "Pin dự phòng Anker có kèm sẵn cáp sạc trong hộp không shop?",
+      answer: "Dạ sản phẩm pin dự phòng Anker này có đi kèm sẵn 1 cáp sạc USB-C ngắn bên trong hộp bạn nhé."
+    }
+  ];
+
+  for (const qna of qnaPairs) {
+    const user = dbUsers[Math.floor(Math.random() * dbUsers.length)];
+    const product = dbProducts[Math.floor(Math.random() * dbProducts.length)];
+    await prisma.productQna.create({
+      data: {
+        userId: user.id,
+        productId: product.id,
+        question: qna.question,
+        answer: qna.answer,
+        isApproved: true,
+        createdAt: new Date(Date.now() - Math.floor(Math.random() * 20) * 24 * 60 * 60 * 1000)
+      }
+    });
+  }
+
+  // Chats
+  const adminUser = await prisma.user.findFirst({ where: { role: Role.ADMIN } });
+  if (adminUser) {
+    const chatDialogs = [
+      {
+        user: dbUsers.find(u => u.email === 'platinum@test.vn') || dbUsers[0],
+        messages: [
+          { sender: 'user', text: "Chào shop, em cần tư vấn mua sạc Macbook Air M3 ạ." },
+          { sender: 'admin', text: "Chào anh/chị, Macbook Air M3 hỗ trợ sạc nhanh, anh/chị có thể tham khảo củ sạc Dual USB-C 35W hoặc các dòng sạc Anker 65W bên em đang có sẵn hàng ạ." },
+          { sender: 'user', text: "Loại Dual USB-C sạc cùng lúc iPhone với Macbook có bị chậm không shop?" },
+          { sender: 'admin', text: "Dạ củ sạc sẽ tự động chia dòng thông minh, sạc cùng lúc cả hai vẫn rất an toàn và ổn định ạ." }
+        ]
+      },
+      {
+        user: dbUsers.find(u => u.email === 'gold@test.vn') || dbUsers[1],
+        messages: [
+          { sender: 'user', text: "Có bảo hành điện tử chưa shop ơi, mình mới nhận được đơn hàng." },
+          { sender: 'admin', text: "Dạ đơn hàng sau khi chuyển trạng thái Đã giao thành công thì hệ thống sẽ tự động kích hoạt bảo hành điện tử trong vòng 5-10 phút ạ." },
+          { sender: 'user', text: "Cảm ơn shop nhé, mình thấy hiển thị trong tài khoản rồi." },
+          { sender: 'admin', text: "Dạ vâng, cảm ơn anh/chị đã tin tưởng và ủng hộ TechStore ạ!" }
+        ]
+      }
+    ];
+
+    for (const dialog of chatDialogs) {
+      if (!dialog.user) continue;
+      let timeOffset = 3600000 * 3; // 3 hours ago
+      for (const msg of dialog.messages) {
+        const senderId = msg.sender === 'user' ? dialog.user.id : adminUser.id;
+        const receiverId = msg.sender === 'user' ? adminUser.id : dialog.user.id;
+        await prisma.chatMessage.create({
+          data: {
+            senderId,
+            receiverId,
+            message: msg.text,
+            createdAt: new Date(Date.now() - timeOffset)
+          }
+        });
+        timeOffset -= 15 * 60 * 1000; // 15 mins later
+      }
+    }
   }
 
   console.log('Seed completed successfully!');

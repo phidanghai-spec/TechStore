@@ -40,12 +40,16 @@ export class ProductController {
       // Build filters
       const where: any = {
         isVisible: true,
-        OR: [
-          { stock: { gt: 0 } },
+        AND: [
           {
-            AND: [
-              { stock: 0 },
-              { status: 'HOT' }
+            OR: [
+              { stock: { gt: 0 } },
+              {
+                AND: [
+                  { stock: 0 },
+                  { status: 'HOT' }
+                ]
+              }
             ]
           }
         ]
@@ -69,11 +73,13 @@ export class ProductController {
       }
 
       if (search) {
-        where.OR = [
-          { name: { contains: search as string, mode: 'insensitive' } },
-          { tags: { contains: search as string, mode: 'insensitive' } },
-          { brand: { contains: search as string, mode: 'insensitive' } }
-        ];
+        where.AND.push({
+          OR: [
+            { name: { contains: search as string, mode: 'insensitive' } },
+            { tags: { contains: search as string, mode: 'insensitive' } },
+            { brand: { contains: search as string, mode: 'insensitive' } }
+          ]
+        });
       }
 
       if (minPrice || maxPrice) {

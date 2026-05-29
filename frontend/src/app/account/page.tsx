@@ -274,7 +274,7 @@ export default function AccountPage() {
       const res = await fetch(`${BACKEND_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: mockEmail, password: 'customer123' })
+        body: JSON.stringify({ email: mockEmail, password: 'Test@123' })
       });
       const data = await res.json();
       if (res.ok) {
@@ -866,10 +866,10 @@ export default function AccountPage() {
               <div className="spinner-border text-info my-3" role="status"></div>
             ) : (
               <div className="d-flex flex-column gap-2 mb-3">
-                <button onClick={() => handleFacebookMockLogin('platinum@gmail.com')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
+                <button onClick={() => handleFacebookMockLogin('platinum@test.vn')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
                   👤 Tiếp tục dưới tên <strong>Khách hàng Platinum</strong>
                 </button>
-                <button onClick={() => handleFacebookMockLogin('gold@gmail.com')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
+                <button onClick={() => handleFacebookMockLogin('gold@test.vn')} className="btn btn-outline-light btn-sm text-start py-2 px-3">
                   👤 Tiếp tục dưới tên <strong>Khách hàng Gold</strong>
                 </button>
               </div>
