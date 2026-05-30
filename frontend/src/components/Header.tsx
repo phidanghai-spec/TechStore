@@ -136,11 +136,12 @@ export default function Header() {
                     <input 
                       type="text" 
                       placeholder="Tìm kiếm..." 
+                      aria-label="Tìm kiếm sản phẩm"
                       className="form-control rounded-pill bg-dark border-secondary text-white pe-5 fs-7 py-1 px-3"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <button type="submit" className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary p-0 pe-3">
+                    <button type="submit" aria-label="Tìm kiếm" className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary p-0 pe-3">
                       <svg width="18" height="18"><use xlinkHref="#search"></use></svg>
                     </button>
                   </form>
@@ -148,7 +149,7 @@ export default function Header() {
 
                 {/* Cart Icon */}
                 <li className="position-relative">
-                  <Link href="/cart" className="mx-1 text-white position-relative">
+                  <Link href="/cart" aria-label="Giỏ hàng" className="mx-1 text-white position-relative">
                     <svg width="24" height="24" viewBox="0 0 24 24"><use xlinkHref="#cart"></use></svg>
                     {cartCount > 0 && (
                       <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-primary" style={{ fontSize: '0.65rem' }}>

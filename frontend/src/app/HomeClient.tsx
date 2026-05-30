@@ -239,6 +239,8 @@ export default function HomeClient() {
 
   return (
     <>
+      <h1 className="visually-hidden">TechStore - Siêu thị điện thoại, laptop & phụ kiện công nghệ chính hãng</h1>
+      
       <Header />
 
       {/* 1. Custom Hero Slider */}
@@ -263,7 +265,7 @@ export default function HomeClient() {
             <div className="container px-md-5 z-3 position-relative">
               <div className="row">
                 <div className="col-md-8 text-white">
-                  <h1 className="display-3 fw-bold mb-3 animate-slide-up">{slide.title}</h1>
+                  <h2 className="display-3 fw-bold mb-3 animate-slide-up">{slide.title}</h2>
                   <p className="fs-5 text-gray mb-4 animate-slide-up">{slide.subtitle}</p>
                   <Link href={slide.link} className="btn btn-primary btn-lg rounded-pill px-4 py-2 text-uppercase fs-7 animate-slide-up">
                     Mua Ngay
@@ -279,6 +281,7 @@ export default function HomeClient() {
             <button 
               key={index}
               onClick={() => setActiveSlide(index)}
+              aria-label={`Chuyển sang slide ${index + 1}`}
               className={`border-0 rounded-circle ${index === activeSlide ? 'bg-primary' : 'bg-secondary'}`}
               style={{ width: '12px', height: '12px' }}
             />
@@ -448,7 +451,19 @@ export default function HomeClient() {
           </div>
 
           {isLoading ? (
-            <p className="text-center py-5 text-secondary">Đang tải sản phẩm hot...</p>
+            <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="col mb-4">
+                  <div className="bg-dark border border-secondary rounded p-3" style={{ height: '380px' }}>
+                    <div className="rounded bg-secondary mb-3" style={{ height: '220px', opacity: 0.3, animation: 'pulse 1.5s ease-in-out infinite' }}></div>
+                    <div className="rounded bg-secondary mb-2" style={{ height: '16px', width: '60%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary mb-2" style={{ height: '20px', width: '90%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary mb-3" style={{ height: '16px', width: '45%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary" style={{ height: '32px', opacity: 0.3 }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
               {hotProducts.map(product => (
@@ -468,7 +483,19 @@ export default function HomeClient() {
           </div>
 
           {isLoading ? (
-            <p className="text-center py-5 text-secondary">Đang tải sản phẩm bán chạy...</p>
+            <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="col mb-4">
+                  <div className="bg-dark border border-secondary rounded p-3" style={{ height: '380px' }}>
+                    <div className="rounded bg-secondary mb-3" style={{ height: '220px', opacity: 0.3, animation: 'pulse 1.5s ease-in-out infinite' }}></div>
+                    <div className="rounded bg-secondary mb-2" style={{ height: '16px', width: '60%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary mb-2" style={{ height: '20px', width: '90%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary mb-3" style={{ height: '16px', width: '45%', opacity: 0.3 }}></div>
+                    <div className="rounded bg-secondary" style={{ height: '32px', opacity: 0.3 }}></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4">
               {bestSellers.map(product => (

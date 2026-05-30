@@ -39,8 +39,12 @@ app.get('/', (req, res) => {
   res.json({ message: 'Chào mừng bạn đến với API của TechStore!' });
 });
 
-// Health check for Railway
+// Health check
 app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
@@ -75,6 +79,18 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 });
 
 // Start Server
-server.listen(PORT, () => {
+server.listen(Number(PORT), '0.0.0.0', () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Self-ping để tránh Render sleep (free tier cold start)
+if (process.env.NODE_ENV === 'production') {
+  const RENDER_URL = process.env.RENDER_URL || 'https://techstore-backend-ftzs.onrender.com';
+  setInterval(() => {
+    fetch(`${RENDER_URL}/api/health`)
+      .then(() => console.log('Self-ping OK:', new Date().toISOString()))
+      .catch((err: Error) => console.log('Self-ping failed:', err.message));
+  }, 14 * 60 * 1000); // Ping mỗi 14 phút
+  console.log('Self-ping enabled for Render keep-alive');
+}
+

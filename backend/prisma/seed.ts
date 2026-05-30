@@ -165,7 +165,7 @@ async function main() {
       salePrice: 33990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-desert-titanium-select?wid=1000&hei=1000&fmt=jpeg&qlt=90&.v=1724427848777',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-9inch-deserttitanium?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'iphone, apple, ios, 16 pro max, 256gb, flagship',
       description: JSON.stringify({
@@ -188,7 +188,7 @@ async function main() {
       salePrice: 28990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-pro-finish-select-202409-6-3inch-deserttitanium?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'iphone, apple, ios, 16 pro, 128gb',
       description: JSON.stringify({
@@ -234,7 +234,7 @@ async function main() {
       salePrice: 22990000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1510557880182-3d4d3cba35a5?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-16-finish-select-202409-6-1inch-black?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'iphone, apple, ios, 16, 128gb',
       description: JSON.stringify({
@@ -257,7 +257,7 @@ async function main() {
       salePrice: 28990000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/iphone-15-pro-finish-select-202309-6-7inch-blacktitanium?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'iphone, apple, ios, 15 pro max, 256gb, best seller',
       description: JSON.stringify({
@@ -303,7 +303,7 @@ async function main() {
       salePrice: 31990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.samsung.com/is/image/samsung/p6pim/vn/2501/gallery/vn-galaxy-s25-ultra-s938-sm-s938bzaaxsp-thumb-544159823?$344_344_PNG$',
       brand: 'Samsung',
       tags: 'samsung, galaxy, s25 ultra, android, flagship, 512gb, s-pen',
       description: JSON.stringify({
@@ -464,7 +464,7 @@ async function main() {
       salePrice: 22990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1605236453806-6ff36851218e?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1598327105666-5b89351aff97?w=800&auto=format&fit=crop&q=80',
       brand: 'Xiaomi',
       tags: 'xiaomi, xiaomi 14 ultra, camera leica, flagship, android',
       description: JSON.stringify({
@@ -627,7 +627,7 @@ async function main() {
       salePrice: 72990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mbp14-m4-pro-spaceblack-select-202411?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'macbook, apple, m4 pro, macbook pro 16, 512gb, work, design',
       description: JSON.stringify({
@@ -671,7 +671,7 @@ async function main() {
       salePrice: 35990000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1541807084-5c52b6b3adef?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mba13-midnight-select-202402?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'macbook, air, m3, macbook air 15, 16gb, best seller',
       description: JSON.stringify({
@@ -693,7 +693,7 @@ async function main() {
       salePrice: 27990000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1531297484001-80022131f5a1?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/mba13-midnight-select-202402?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'macbook, air, m3, macbook air 13, best seller',
       description: JSON.stringify({
@@ -715,7 +715,7 @@ async function main() {
       salePrice: 45990000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1593642632559-0c6d3fc62b89?w=800&auto=format&fit=crop&q=80',
       brand: 'Dell',
       tags: 'dell, xps, xps 15, i9, 32gb, 1tb, windows',
       description: JSON.stringify({
@@ -781,7 +781,7 @@ async function main() {
       salePrice: 45990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1593640408182-31c228b89e7c?w=800&auto=format&fit=crop&q=80',
       brand: 'ASUS',
       tags: 'asus, rog, strix g16, rtx 4070, gaming, 32gb, flagship',
       description: JSON.stringify({
@@ -890,7 +890,7 @@ async function main() {
       salePrice: 6490000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=1000&hei=1000&fmt=jpeg&qlt=95&.v=1660803972361',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MQD83?wid=800&hei=800&fmt=jpeg&qlt=95',
       brand: 'Apple',
       tags: 'airpods, apple, tai nghe bluetooth, anc, hot',
       description: JSON.stringify({
@@ -911,7 +911,7 @@ async function main() {
       salePrice: 4490000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/airpods-4-hero-select-202409?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'airpods, apple, airpods 4, anc, best seller',
       description: JSON.stringify({
@@ -989,7 +989,7 @@ async function main() {
       salePrice: 7490000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1618366712010-f4ae9c647dcb?w=800&auto=format&fit=crop&q=80',
       brand: 'Sony',
       tags: 'sony, wh-1000xm5, over-ear, chong on, hot',
       description: JSON.stringify({
@@ -1087,7 +1087,7 @@ async function main() {
       salePrice: 11990000,
       stock: getRandomStock(true),
       status: ProductStatus.HOT,
-      imageUrl: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/watch-s10-hero-202409?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'apple watch, series 10, smartwatch, ios, apple, hot',
       description: JSON.stringify({
@@ -1128,7 +1128,7 @@ async function main() {
       salePrice: 22990000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1508685096489-7aacd43bd3b1?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/watch-ultra-2-hero-202309?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'apple watch, ultra 2, smartwatch, premium',
       description: JSON.stringify({
@@ -1393,7 +1393,7 @@ async function main() {
       salePrice: 3290000,
       stock: getRandomStock(),
       status: ProductStatus.NORMAL,
-      imageUrl: 'https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/MK2C3?wid=800&hei=800&fmt=jpeg&qlt=90',
       brand: 'Apple',
       tags: 'ban phim apple, magic keyboard, touch id',
       description: JSON.stringify({
@@ -1448,7 +1448,7 @@ async function main() {
       salePrice: 2190000,
       stock: getRandomStock(),
       status: ProductStatus.BEST_SELLER,
-      imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&auto=format&fit=crop&q=80',
+      imageUrl: 'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=800&auto=format&fit=crop&q=80',
       brand: 'Logitech',
       tags: 'chuot, logitech, mx master 3s, chuot van phong, best seller',
       description: JSON.stringify({

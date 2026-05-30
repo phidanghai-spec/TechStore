@@ -137,9 +137,9 @@ export default function ProductCard({ product }: ProductCardProps) {
             </h6>
             
             {/* Star ratings */}
-            <div className="stars text-warning fs-8 mb-2 d-flex align-items-center gap-1">
+            <div className="stars text-warning fs-8 mb-2 d-flex align-items-center gap-1" aria-label={`Đánh giá ${avgRating} trên 5 sao`}>
               {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i}>
+                <span key={i} aria-hidden="true">
                   {i < Math.round(avgRating) ? '★' : '☆'}
                 </span>
               ))}
