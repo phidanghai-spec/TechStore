@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'TechStore - Điện Thoại & Phụ Kiện Chính Hãng Giá Tốt',
     description: 'Hệ thống bán lẻ thiết bị công nghệ chính hãng hàng đầu Việt Nam. Trả góp 0%, giao hàng nhanh 2h.',
-    url: 'https://techstore.vercel.app',
+    url: 'https://frontend-ruby-phi-14.vercel.app',
     siteName: 'TechStore',
     images: [
       {
@@ -27,8 +27,8 @@ export default function HomePage() {
     "@context": "https://schema.org",
     "@type": "Organization",
     "name": "TechStore.vn",
-    "url": "https://techstore.vercel.app",
-    "logo": "https://techstore.vercel.app/logo.png",
+    "url": "https://frontend-ruby-phi-14.vercel.app",
+    "logo": "https://frontend-ruby-phi-14.vercel.app/logo.png",
     "description": "TechStore.vn - Hệ thống bán lẻ điện thoại di động, laptop, tai nghe, đồng hồ và phụ kiện công nghệ chính hãng.",
     "contactPoint": {
       "@type": "ContactPoint",
