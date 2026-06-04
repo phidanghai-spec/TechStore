@@ -5,6 +5,7 @@ import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 import dynamic from 'next/dynamic';
 const ChatWidget = dynamic(() => import('../../../components/ChatWidget'), { ssr: false });
+import { validateProductImage } from '../../../utils/image';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -12,6 +13,18 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
   const [product, setProduct] = useState<any>(initialProduct);
   const [quantity, setQuantity] = useState(1);
   const [user, setUser] = useState<any>(null);
+
+  // Calculate discount percentage
+  const discountPercent = product && product.originalPrice > product.salePrice 
+    ? Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100) 
+    : 0;
+
+  // Calculate mathematically consistent final price based on the percentage
+  const discountAmount = product ? Math.round(product.originalPrice * (discountPercent / 100)) : 0;
+  const finalPrice = product ? (discountPercent > 0 ? product.originalPrice - discountAmount : product.salePrice) : 0;
+
+  // Validate product image
+  const displayImage = product ? validateProductImage(product.imageUrl, product) : '';
 
   // Review Form state
   const [rating, setRating] = useState(5);
@@ -89,12 +102,13 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
     const existingIndex = cartItems.findIndex((item: any) => item.productId === product.id);
     if (existingIndex > -1) {
       cartItems[existingIndex].quantity += quantity;
+      cartItems[existingIndex].price = finalPrice; // Keep it consistent
     } else {
       cartItems.push({
         productId: product.id,
         name: product.name,
-        price: product.salePrice,
-        imageUrl: product.imageUrl,
+        price: finalPrice, // Save finalPrice
+        imageUrl: displayImage,
         quantity: quantity,
         maxStock: product.stock
       });
@@ -205,13 +219,13 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
               <div className="bg-dark p-4 rounded border border-secondary d-flex align-items-center justify-content-center overflow-hidden position-relative" style={{ minHeight: '400px' }}>
                 {product.stock === 0 && (
                   product.status === 'HOT' ? (
-                    <div className="hot-sold-out-overlay fs-5 py-2 px-3">CHÁY HÀNG</div>
+                    <div className="hot-sold-out-overlay fs-5 py-2 px-3 bg-danger text-white">CHÁY HÀNG</div>
                   ) : (
                     <div className="sold-out-overlay fs-5 py-2 px-3" style={{ backgroundColor: '#555555' }}>HẾT HÀNG</div>
                   )
                 )}
                 <img 
-                  src={product.imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                  src={displayImage || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
                   alt={product.name} 
                   className="img-fluid" 
                   style={{ maxHeight: '380px', objectFit: 'contain', width: 'auto' }}
@@ -228,9 +242,19 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
               <h2 className="fw-bold mb-2">{product.name}</h2>
               
               {/* Star Rating details */}
-              <div className="d-flex align-items-center gap-2 text-warning mb-3">
-                <span className="fs-5">{'★'.repeat(Math.round(product.avgRating || 5)) + '☆'.repeat(5 - Math.round(product.avgRating || 5))}</span>
-                <span className="text-secondary">({product.ratingsCount || 0} đánh giá)</span>
+              <div className="d-flex align-items-center gap-2 mb-3">
+                {product.ratingsCount === 0 ? (
+                  <span className="text-secondary fs-7">Chưa có đánh giá</span>
+                ) : (
+                  <>
+                    <span className="text-warning fs-5">
+                      {'★'.repeat(Math.round(product.avgRating || 0)) + '☆'.repeat(5 - Math.round(product.avgRating || 0))}
+                    </span>
+                    <span className="text-secondary fs-7">
+                      ({product.avgRating?.toFixed(1)}) • {product.ratingsCount} đánh giá
+                    </span>
+                  </>
+                )}
                 <span className="text-secondary">|</span>
                 <span className={`fw-bold ${product.stock > 0 ? 'text-success' : 'text-danger'}`}>
                   {product.stock > 0 ? `Còn hàng (${product.stock} sản phẩm)` : 'Hết hàng'}
@@ -240,7 +264,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
               {/* Price Row */}
               <div className="d-flex align-items-center gap-3 bg-dark p-3 rounded mb-4 border border-secondary">
                 <h3 className="text-primary m-0 fw-bold">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.salePrice)}
+                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalPrice)}
                 </h3>
                 {product.originalPrice > product.salePrice && (
                   <>
@@ -248,7 +272,7 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                       {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.originalPrice)}
                     </span>
                     <span className="badge bg-danger">
-                      Tiết kiệm {Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100)}%
+                      Tiết kiệm {discountPercent}%
                     </span>
                   </>
                 )}

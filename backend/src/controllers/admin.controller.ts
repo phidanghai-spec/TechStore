@@ -468,6 +468,12 @@ export class AdminController {
       const orders = await prisma.order.findMany({
         where,
         include: {
+          user: {
+            select: {
+              fullName: true,
+              email: true
+            }
+          },
           items: {
             include: {
               product: { select: { name: true, imageUrl: true } }

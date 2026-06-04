@@ -19,6 +19,21 @@ export class AuthController {
       return res.status(400).json({ message: 'Vui lòng điền đầy đủ tất cả các trường.' });
     }
 
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 16) {
+      return res.status(400).json({ message: 'Bạn phải đủ 16 tuổi để đăng ký tài khoản.' });
+    }
+    if (age > 100 || birthDate > today) {
+      return res.status(400).json({ message: 'Năm sinh không hợp lệ.' });
+    }
+
     try {
       // Check duplicate email
       const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -235,6 +250,21 @@ export class AuthController {
 
     if (!fullName || !phone || !address || !dob) {
       return res.status(400).json({ message: 'Họ tên, số điện thoại, địa chỉ 1, ngày sinh là các trường bắt buộc.' });
+    }
+
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
+    if (age < 16) {
+      return res.status(400).json({ message: 'Bạn phải đủ 16 tuổi để cập nhật thông tin cá nhân.' });
+    }
+    if (age > 100 || birthDate > today) {
+      return res.status(400).json({ message: 'Năm sinh không hợp lệ.' });
     }
 
     try {

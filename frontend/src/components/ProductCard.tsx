@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState } from 'react';
+import { validateProductImage } from '../utils/image';
 
 interface ProductCardProps {
   product: {
@@ -17,6 +18,7 @@ interface ProductCardProps {
     brand: string;
     avgRating?: number;
     ratingsCount?: number;
+    reviewCount?: number;
   };
 }
 
@@ -30,17 +32,25 @@ export default function ProductCard({ product }: ProductCardProps) {
     status,
     imageUrl,
     brand,
-    avgRating = 5,
+    avgRating = 0,
     ratingsCount = 0
   } = product;
-
-  // Image fallback state
-  const [imgSrc, setImgSrc] = useState(imageUrl || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore');
 
   // Calculate discount percentage
   const discountPercent = originalPrice > salePrice 
     ? Math.round(((originalPrice - salePrice) / originalPrice) * 100) 
     : 0;
+
+  // Calculate mathematically consistent final price based on the percentage
+  const discountAmount = Math.round(originalPrice * (discountPercent / 100));
+  const finalPrice = discountPercent > 0 ? originalPrice - discountAmount : salePrice;
+
+  // Image fallback state validating if it is a tech device photo
+  const initialImage = validateProductImage(imageUrl, product);
+  const [imgSrc, setImgSrc] = useState(initialImage);
+
+  const reviewCount = product.reviewCount !== undefined ? product.reviewCount : product.ratingsCount;
+  const hasReviews = reviewCount !== undefined && reviewCount !== null && reviewCount > 0;
 
   // Handle adding to cart
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -63,12 +73,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     const existingIndex = cartItems.findIndex((item: any) => item.productId === product.id);
     if (existingIndex > -1) {
       cartItems[existingIndex].quantity += 1;
+      cartItems[existingIndex].price = finalPrice; // Update to consistent finalPrice
     } else {
       cartItems.push({
         productId: product.id,
         name,
-        price: salePrice,
-        imageUrl,
+        price: finalPrice, // Save finalPrice
+        imageUrl: imgSrc,
         quantity: 1,
         maxStock: stock
       });
@@ -85,7 +96,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="col mb-4">
-      <div className="product-item hover-effect-slide position-relative bg-black p-3 border border-secondary rounded h-100 d-flex flex-column justify-content-between">
+      <div className="product-card bg-black p-3 border border-secondary rounded d-flex flex-column h-100" style={{ overflow: 'hidden' }}>
         
         {/* Badges / Overlays */}
         <div className="position-absolute top-0 start-0 m-3 z-3 d-flex flex-column gap-1">
@@ -103,7 +114,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         {/* Stock status overlay */}
         {stock === 0 && (
           status === 'HOT' ? (
-            <div className="hot-sold-out-overlay">CHÁY HÀNG</div>
+            <div className="hot-sold-out-overlay bg-danger text-white">CHÁY HÀNG</div>
           ) : (
             <div className="sold-out-overlay" style={{ backgroundColor: '#555555' }}>HẾT HÀNG</div>
           )
@@ -127,7 +138,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </div>
 
         {/* Product Info */}
-        <div className="product-content mt-3 d-flex flex-column flex-grow-1 justify-content-between">
+        <div className="product-content mt-3 d-flex flex-column flex-grow-1">
           <div>
             <span className="text-secondary fs-8 uppercase d-block">{brand}</span>
             <h6 className="fs-6 mt-1 mb-2">
@@ -137,38 +148,40 @@ export default function ProductCard({ product }: ProductCardProps) {
             </h6>
             
             {/* Star ratings */}
-            <div className="stars text-warning fs-8 mb-2 d-flex align-items-center gap-1" aria-label={`Đánh giá ${avgRating} trên 5 sao`}>
-              {Array.from({ length: 5 }).map((_, i) => (
-                <span key={i} aria-hidden="true">
-                  {i < Math.round(avgRating) ? '★' : '☆'}
-                </span>
-              ))}
-              <span className="text-secondary ms-1">({ratingsCount})</span>
-            </div>
+            {!hasReviews ? (
+              <div className="text-secondary fs-8 mb-2">Chưa có đánh giá</div>
+            ) : (
+              <div className="stars text-warning fs-8 mb-2 d-flex align-items-center gap-1" aria-label={`Đánh giá ${avgRating} trên 5 sao`}>
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <span key={i} aria-hidden="true">
+                    {i < Math.round(avgRating) ? '★' : '☆'}
+                  </span>
+                ))}
+                <span className="text-secondary ms-1">({avgRating.toFixed(1)}) • {reviewCount} đánh giá</span>
+              </div>
+            )}
           </div>
 
-          <div>
-            {/* Price list */}
-            <div className="d-flex align-items-center gap-2 mb-3">
-              <span className="fs-6 fw-bold text-primary">
-                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(salePrice)}
+          {/* Price list */}
+          <div className="d-flex align-items-center gap-2 my-2">
+            <span className="fs-6 fw-bold text-primary">
+              {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(finalPrice)}
+            </span>
+            {originalPrice > salePrice && (
+              <span className="fs-8 text-decoration-line-through text-secondary">
+                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(originalPrice)}
               </span>
-              {originalPrice > salePrice && (
-                <span className="fs-8 text-decoration-line-through text-secondary">
-                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(originalPrice)}
-                </span>
-              )}
-            </div>
-
-            {/* Add to Cart button */}
-            <button 
-              onClick={handleAddToCart}
-              className={`w-100 btn btn-sm rounded ${stock <= 0 ? 'btn-secondary disabled' : 'btn-outline-primary'}`}
-              disabled={stock <= 0}
-            >
-              {stock <= 0 ? 'Hết hàng' : 'Thêm vào giỏ'}
-            </button>
+            )}
           </div>
+
+          {/* Add to Cart button */}
+          <button 
+            onClick={handleAddToCart}
+            className={`w-100 btn btn-sm btn-add-to-cart rounded mt-auto ${stock <= 0 ? 'btn-secondary disabled' : 'btn-outline-primary'}`}
+            disabled={stock <= 0}
+          >
+            {stock <= 0 ? 'Hết hàng' : 'Thêm vào giỏ'}
+          </button>
         </div>
 
       </div>

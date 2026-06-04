@@ -15,6 +15,18 @@ const RevenueChart = dynamic(() => import('../../components/RevenueChart'), {
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || BACKEND_URL;
 
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '-';
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const minutes = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${minutes}`;
+};
+
 export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
@@ -951,8 +963,10 @@ export default function AdminPage() {
                         <thead>
                           <tr>
                             <th className="ps-3">Mã đơn</th>
+                            <th>Người mua</th>
                             <th>Khách hàng</th>
                             <th>Tổng tiền</th>
+                            <th>Ngày đặt</th>
                             <th>Trạng thái</th>
                             <th>Thanh toán</th>
                             <th>Công nợ COD</th>
@@ -965,10 +979,21 @@ export default function AdminPage() {
                             <tr key={i}>
                               <td className="ps-3">#{o.id.substring(0, 8).toUpperCase()}</td>
                               <td>
+                                {o.user ? (
+                                  <>
+                                    <strong className="d-block text-white">{o.user.fullName}</strong>
+                                    <small className="text-secondary">{o.user.email}</small>
+                                  </>
+                                ) : (
+                                  <span className="text-secondary">Khách vãng lai</span>
+                                )}
+                              </td>
+                              <td>
                                 <strong className="d-block text-white">{o.customerName}</strong>
                                 <small className="text-secondary">{o.customerPhone}</small>
                               </td>
                               <td className="text-primary fw-bold">{new Intl.NumberFormat('vi-VN').format(o.totalAmount)}đ</td>
+                              <td>{formatDate(o.createdAt)}</td>
                               <td>
                                 {o.orderStatus === 'PENDING' && <span className="badge bg-warning text-black">Chờ duyệt</span>}
                                 {o.orderStatus === 'APPROVED' && <span className="badge bg-info text-black">Đã duyệt</span>}

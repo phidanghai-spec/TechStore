@@ -155,6 +155,19 @@ export default function AccountPage() {
     setAuthError('');
     setAuthSuccess('');
 
+    // Frontend validation for age (min 16, max 100)
+    const birthYear = new Date(dob).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    if (age < 16) {
+      setAuthError('Bạn phải đủ 16 tuổi để đăng ký');
+      return;
+    }
+    if (age > 100) {
+      setAuthError('Năm sinh không hợp lệ');
+      return;
+    }
+
     try {
       const res = await fetch(`${BACKEND_URL}/api/auth/register`, {
         method: 'POST',
@@ -215,6 +228,19 @@ export default function AccountPage() {
     e.preventDefault();
     setProfileError('');
     setProfileSuccess('');
+
+    // Frontend validation for age (min 16, max 100)
+    const birthYear = new Date(dob).getFullYear();
+    const currentYear = new Date().getFullYear();
+    const age = currentYear - birthYear;
+    if (age < 16) {
+      setProfileError('Bạn phải đủ 16 tuổi để cập nhật thông tin cá nhân');
+      return;
+    }
+    if (age > 100) {
+      setProfileError('Năm sinh không hợp lệ');
+      return;
+    }
 
     const token = localStorage.getItem('token');
     try {
@@ -474,6 +500,8 @@ export default function AccountPage() {
                           required 
                           value={dob}
                           onChange={(e) => setDob(e.target.value)}
+                          max={new Date(new Date().getFullYear() - 16, new Date().getMonth(), new Date().getDate()).toLocaleDateString('sv-SE')}
+                          min="1924-01-01"
                         />
                       </div>
                       <button type="submit" className="w-100 btn btn-primary btn-sm mb-3 py-2">Đăng ký</button>
@@ -619,7 +647,15 @@ export default function AccountPage() {
                         </div>
                         <div className="mb-4">
                           <label className="form-label fs-7 text-secondary">Ngày sinh</label>
-                          <input type="date" className="form-control bg-black border-secondary text-white fs-7" required value={dob} onChange={(e) => setDob(e.target.value)} />
+                          <input 
+                            type="date" 
+                            className="form-control bg-black border-secondary text-white fs-7" 
+                            required 
+                            value={dob} 
+                            onChange={(e) => setDob(e.target.value)}
+                            max={new Date(new Date().getFullYear() - 16, new Date().getMonth(), new Date().getDate()).toLocaleDateString('sv-SE')}
+                            min="1924-01-01"
+                          />
                         </div>
                         <button type="submit" className="btn btn-primary btn-sm px-4 py-2">Lưu thay đổi</button>
                       </form>

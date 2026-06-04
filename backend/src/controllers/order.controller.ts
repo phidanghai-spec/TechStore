@@ -50,7 +50,12 @@ export class OrderController {
       let totalAmount = 0;
       const orderItemsData = items.map((item: any) => {
         const product = dbProducts.find(p => p.id === item.productId)!;
-        const itemPrice = product.salePrice;
+        const discountPercent = product.originalPrice > product.salePrice 
+          ? Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100) 
+          : 0;
+        const discountAmount = Math.round(product.originalPrice * (discountPercent / 100));
+        const itemPrice = discountPercent > 0 ? product.originalPrice - discountAmount : product.salePrice;
+        
         totalAmount += itemPrice * item.quantity;
         return {
           productId: product.id,

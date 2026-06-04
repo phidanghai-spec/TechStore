@@ -10,6 +10,14 @@ import ProductCard from '../../components/ProductCard';
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
+const removeAccents = (str: string) => {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D');
+};
+
 // Fallback Mock Data
 const MOCK_PRODUCTS = [
   // Phones
@@ -68,21 +76,26 @@ function ShopContent() {
     setIsLoading(true);
     try {
       const params = new URLSearchParams();
-      if (activeCategory) params.append('category', activeCategory);
-      if (activeBrand) params.append('brand', activeBrand);
+      const cat = searchParams.get('category') || '';
+      const brd = searchParams.get('brand') || '';
+      const srch = searchParams.get('search') || '';
+      const stat = searchParams.get('status') || '';
+      
+      if (cat) params.append('category', cat);
+      if (brd) params.append('brand', brd);
       if (minPrice) params.append('minPrice', minPrice);
       if (maxPrice) params.append('maxPrice', maxPrice);
       if (ram) params.append('ram', ram);
       if (storage) params.append('storage', storage);
-      if (searchVal) params.append('search', searchVal);
-      if (statusFilter) params.append('status', statusFilter);
+      if (srch) params.append('search', srch);
+      if (stat) params.append('status', stat);
 
       const res = await fetch(`${BACKEND_URL}/api/products?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
       } else {
-        fallbackFiltering();
+        fallbackFiltering(cat, brd, srch, stat);
       }
     } catch (err) {
       fallbackFiltering();
@@ -91,25 +104,37 @@ function ShopContent() {
     }
   };
 
+  // Sync state with URL search params and load products when URL updates
   useEffect(() => {
+    setActiveCategory(searchParams.get('category') || '');
+    setActiveBrand(searchParams.get('brand') || '');
+    setSearchVal(searchParams.get('search') || '');
+    setStatusFilter(searchParams.get('status') || '');
+    
     loadProducts();
-  }, [activeCategory, activeBrand, statusFilter]);
+  }, [searchParams]);
 
   // Handle client-side fallback filtering
-  const fallbackFiltering = () => {
+  const fallbackFiltering = (cat?: string, brd?: string, srch?: string, stat?: string) => {
     let filtered = MOCK_PRODUCTS;
 
-    if (activeCategory) {
-      filtered = filtered.filter(p => p.category.slug === activeCategory);
+    const finalCat = cat !== undefined ? cat : activeCategory;
+    const finalBrd = brd !== undefined ? brd : activeBrand;
+    const finalSrch = srch !== undefined ? srch : searchVal;
+    const finalStat = stat !== undefined ? stat : statusFilter;
+
+    if (finalCat) {
+      filtered = filtered.filter(p => p.category.slug === finalCat);
     }
-    if (activeBrand) {
-      filtered = filtered.filter(p => p.brand.toLowerCase() === activeBrand.toLowerCase());
+    if (finalBrd) {
+      filtered = filtered.filter(p => p.brand.toLowerCase() === finalBrd.toLowerCase());
     }
-    if (statusFilter) {
-      filtered = filtered.filter(p => p.status === statusFilter);
+    if (finalStat) {
+      filtered = filtered.filter(p => p.status === finalStat);
     }
-    if (searchVal) {
-      filtered = filtered.filter(p => p.name.toLowerCase().includes(searchVal.toLowerCase()));
+    if (finalSrch) {
+      const searchClean = removeAccents(finalSrch.toLowerCase());
+      filtered = filtered.filter(p => removeAccents(p.name.toLowerCase()).includes(searchClean));
     }
     if (minPrice) {
       filtered = filtered.filter(p => p.salePrice >= parseFloat(minPrice));
@@ -119,6 +144,30 @@ function ShopContent() {
     }
 
     setProducts(filtered);
+  };
+
+  const handleCategoryChange = (val: string) => {
+    setActiveCategory(val);
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set('category', val);
+    else params.delete('category');
+    router.push(`/shop?${params.toString()}`);
+  };
+
+  const handleBrandChange = (val: string) => {
+    setActiveBrand(val);
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set('brand', val);
+    else params.delete('brand');
+    router.push(`/shop?${params.toString()}`);
+  };
+
+  const handleStatusChange = (val: string) => {
+    setStatusFilter(val);
+    const params = new URLSearchParams(searchParams.toString());
+    if (val) params.set('status', val);
+    else params.delete('status');
+    router.push(`/shop?${params.toString()}`);
   };
 
   const handleApplyFilter = (e: React.FormEvent) => {
@@ -166,7 +215,7 @@ function ShopContent() {
                 <select 
                   className="form-select bg-black border-secondary text-white fs-7"
                   value={activeCategory}
-                  onChange={(e) => setActiveCategory(e.target.value)}
+                  onChange={(e) => handleCategoryChange(e.target.value)}
                 >
                   <option value="">Tất cả danh mục</option>
                   {categories.map((cat, i) => (
@@ -181,7 +230,7 @@ function ShopContent() {
                 <select 
                   className="form-select bg-black border-secondary text-white fs-7"
                   value={activeBrand}
-                  onChange={(e) => setActiveBrand(e.target.value)}
+                  onChange={(e) => handleBrandChange(e.target.value)}
                 >
                   <option value="">Tất cả hãng</option>
                   <option value="Apple">Apple</option>
@@ -257,7 +306,7 @@ function ShopContent() {
                 <select 
                   className="form-select bg-black border-secondary text-white fs-7"
                   value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
+                  onChange={(e) => handleStatusChange(e.target.value)}
                 >
                   <option value="">Mặc định</option>
                   <option value="HOT">Hàng HOT</option>

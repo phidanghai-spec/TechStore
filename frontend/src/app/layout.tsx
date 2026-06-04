@@ -30,8 +30,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://images.samsung.com" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://images.unsplash.com" />
         <link rel="stylesheet" href="/css/normalize.css" />
-        <link rel="preload" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" as="style" onLoad={(e: any) => { e.target.onload = null; e.target.rel='stylesheet'; }} />
-        <noscript><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" /></noscript>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" />
         <link rel="stylesheet" href="/css/vendor.css" />
         <link rel="stylesheet" href="/css/style.css" />
       </head>

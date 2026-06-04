@@ -41,18 +41,9 @@ export class ProductController {
       // Build filters
       const where: any = {
         isVisible: true,
-        AND: [
-          {
-            OR: [
-              { stock: { gt: 0 } },
-              {
-                AND: [
-                  { stock: 0 },
-                  { status: 'HOT' }
-                ]
-              }
-            ]
-          }
+        OR: [
+          { stock: { gt: 0 } },
+          { status: 'HOT' }
         ]
       };
 
@@ -64,8 +55,7 @@ export class ProductController {
 
       if (brand) {
         where.brand = {
-          equals: brand as string,
-          mode: 'insensitive'
+          equals: brand as string
         };
       }
 
@@ -74,13 +64,18 @@ export class ProductController {
       }
 
       if (search) {
-        where.AND.push({
-          OR: [
-            { name: { contains: search as string, mode: 'insensitive' } },
-            { tags: { contains: search as string, mode: 'insensitive' } },
-            { brand: { contains: search as string, mode: 'insensitive' } }
-          ]
-        });
+        const keyword = search as string;
+        where.AND = [
+          {
+            OR: [
+              { name: { contains: keyword, mode: 'insensitive' } as any },
+              { brand: { contains: keyword, mode: 'insensitive' } as any },
+              { description: { contains: keyword, mode: 'insensitive' } as any },
+              { tags: { contains: keyword, mode: 'insensitive' } as any },
+              { category: { name: { contains: keyword, mode: 'insensitive' } as any } }
+            ]
+          }
+        ];
       }
 
       if (minPrice || maxPrice) {
@@ -145,7 +140,7 @@ export class ProductController {
         const ratingsCount = p.reviews.length;
         const avgRating = ratingsCount > 0 
           ? p.reviews.reduce((acc, curr) => acc + curr.rating, 0) / ratingsCount
-          : 5; // Mặc định 5 sao nếu chưa có đánh giá
+          : 0; // Mặc định 0 sao nếu chưa có đánh giá
         
         // Remove reviews list to keep response lightweight
         const { reviews, ...prodData } = p;
@@ -217,7 +212,7 @@ export class ProductController {
       const ratingsCount = product.reviews.length;
       const avgRating = ratingsCount > 0
         ? product.reviews.reduce((acc, curr) => acc + curr.rating, 0) / ratingsCount
-        : 5;
+        : 0; // Mặc định 0 sao nếu chưa có đánh giá
 
       return res.status(200).json({
         ...product,
@@ -228,6 +223,67 @@ export class ProductController {
     } catch (error) {
       console.error('Get product detail error:', error);
       return res.status(500).json({ message: 'Lỗi máy chủ khi lấy chi tiết sản phẩm.' });
+    }
+  }
+
+  /**
+   * API gợi ý tìm kiếm (autocomplete)
+   * GET /api/products/suggestions?q=keyword
+   */
+  public static async getSuggestions(req: Request, res: Response) {
+    const { q } = req.query;
+    if (!q || (q as string).trim().length < 2) {
+      return res.status(200).json([]);
+    }
+    const keyword = (q as string).trim();
+
+    try {
+      const products = await prisma.product.findMany({
+        where: {
+          isVisible: true,
+          OR: [
+            { stock: { gt: 0 } },
+            { status: 'HOT' }
+          ],
+          AND: [
+            {
+              OR: [
+                { name: { contains: keyword, mode: 'insensitive' } as any },
+                { brand: { contains: keyword, mode: 'insensitive' } as any },
+                { description: { contains: keyword, mode: 'insensitive' } as any },
+                { tags: { contains: keyword, mode: 'insensitive' } as any },
+                { category: { name: { contains: keyword, mode: 'insensitive' } as any } }
+              ]
+            }
+          ]
+        },
+        include: {
+          category: true
+        },
+        take: 5
+      });
+
+      const suggestions = products.map(p => {
+        const discountPercent = p.originalPrice > p.salePrice 
+          ? Math.round(((p.originalPrice - p.salePrice) / p.originalPrice) * 100) 
+          : 0;
+        const discountAmount = Math.round(p.originalPrice * (discountPercent / 100));
+        const finalPrice = discountPercent > 0 ? p.originalPrice - discountAmount : p.salePrice;
+
+        return {
+          id: p.id,
+          name: p.name,
+          price: finalPrice,
+          image: p.imageUrl,
+          category: p.category.name,
+          slug: p.slug
+        };
+      });
+
+      return res.status(200).json(suggestions);
+    } catch (error) {
+      console.error('Get suggestions error:', error);
+      return res.status(500).json({ message: 'Lỗi máy chủ khi lấy gợi ý.' });
     }
   }
 }

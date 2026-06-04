@@ -85,7 +85,7 @@ server.listen(Number(PORT), '0.0.0.0', () => {
 
 // Self-ping để tránh Render sleep (free tier cold start)
 if (process.env.NODE_ENV === 'production') {
-  const RENDER_URL = process.env.RENDER_URL || 'https://techstore-backend-ftzs.onrender.com';
+  const RENDER_URL = process.env.RENDER_URL || 'https://techstore-backend-1m.onrender.com';
   setInterval(() => {
     fetch(`${RENDER_URL}/api/health`)
       .then(() => console.log('Self-ping OK:', new Date().toISOString()))

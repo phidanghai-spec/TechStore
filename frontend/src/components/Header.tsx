@@ -1,14 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
 export default function Header() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(0);
   const [user, setUser] = useState<{ fullName: string; role: string } | null>(null);
+
+  // Search Autocomplete State
+  const [suggestions, setSuggestions] = useState<any[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Load user and cart count on mount
   useEffect(() => {
@@ -54,8 +61,46 @@ export default function Header() {
     };
   }, []);
 
+  // Handle click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSuggestions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // Fetch search suggestions with 300ms debounce
+  useEffect(() => {
+    if (searchQuery.trim().length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    const delayDebounceFn = setTimeout(async () => {
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/products/suggestions?q=${encodeURIComponent(searchQuery.trim())}`);
+        if (res.ok) {
+          const data = await res.json();
+          setSuggestions(data);
+          setShowSuggestions(true);
+        }
+      } catch (err) {
+        console.error('Error fetching suggestions:', err);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery]);
+
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setShowSuggestions(false);
     if (searchQuery.trim()) {
       router.push(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     }
@@ -123,6 +168,9 @@ export default function Header() {
                   <li className="nav-item">
                     <Link className="nav-link text-white" href="/shop?category=phu-kien">Phụ kiện</Link>
                   </li>
+                  <li className="nav-item">
+                    <Link className="nav-link text-white" href="/shop?category=dong-ho">Đồng hồ</Link>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -140,10 +188,54 @@ export default function Header() {
                       className="form-control rounded-pill bg-dark border-secondary text-white pe-5 fs-7 py-1 px-3"
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
+                      onFocus={() => {
+                        if (suggestions.length > 0) setShowSuggestions(true);
+                      }}
                     />
                     <button type="submit" aria-label="Tìm kiếm" className="btn btn-link position-absolute end-0 top-50 translate-middle-y text-secondary p-0 pe-3">
                       <svg width="18" height="18"><use xlinkHref="#search"></use></svg>
                     </button>
+                    
+                    {/* Autocomplete Suggestions Dropdown */}
+                    {showSuggestions && suggestions.length > 0 && (
+                      <div ref={dropdownRef} className="position-absolute bg-dark border border-secondary rounded shadow-lg w-100 mt-1 z-3" style={{ top: '100%', left: 0, minWidth: '320px' }}>
+                        <div className="d-flex flex-column p-2 gap-1">
+                          {suggestions.map((item) => (
+                            <Link 
+                              key={item.id} 
+                              href={`/san-pham/${item.slug}`} 
+                              onClick={() => setShowSuggestions(false)}
+                              className="suggestion-item d-flex align-items-center gap-2 p-2 rounded text-decoration-none text-white border-bottom border-secondary"
+                              style={{ transition: 'background 0.2s', borderBottomColor: 'rgba(255,255,255,0.05) !important' }}
+                            >
+                              <img 
+                                src={item.image || 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore'} 
+                                width="40" 
+                                height="40" 
+                                className="rounded" 
+                                style={{ objectFit: 'contain' }}
+                                onError={(e) => {
+                                  (e.target as HTMLImageElement).src = 'https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore';
+                                }}
+                              />
+                              <div className="flex-grow-1 overflow-hidden text-start">
+                                <div className="fs-8 fw-bold text-truncate text-white">{item.name}</div>
+                                <div className="fs-9 text-primary">
+                                  {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)}
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                          <Link 
+                            href={`/shop?search=${encodeURIComponent(searchQuery.trim())}`}
+                            onClick={() => setShowSuggestions(false)}
+                            className="text-center py-2 fs-8 text-primary fw-bold text-decoration-none hover-underline"
+                          >
+                            {"Xem tất cả kết quả cho \"" + searchQuery + "\""}
+                          </Link>
+                        </div>
+                      </div>
+                    )}
                   </form>
                 </li>
 
@@ -194,6 +286,14 @@ export default function Header() {
           </div>
         </div>
       </nav>
+      <style jsx>{`
+        .suggestion-item:hover {
+          background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        .hover-underline:hover {
+          text-decoration: underline !important;
+        }
+      `}</style>
     </>
   );
 }
