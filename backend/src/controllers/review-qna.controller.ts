@@ -47,7 +47,18 @@ export class ReviewQnaController {
       });
 
       if (existingReview) {
-        return res.status(400).json({ message: 'Bạn đã đánh giá sản phẩm này trước đó.' });
+        // Update review instead of returning 400
+        const updatedReview = await prisma.productReview.update({
+          where: { id: existingReview.id },
+          data: {
+            rating: parseInt(rating),
+            comment
+          }
+        });
+        return res.status(200).json({
+          message: 'Cập nhật đánh giá thành công. Cảm ơn bạn!',
+          review: updatedReview
+        });
       }
 
       // Create review
@@ -101,6 +112,51 @@ export class ReviewQnaController {
     } catch (error) {
       console.error('Create QnA error:', error);
       return res.status(500).json({ message: 'Lỗi hệ thống khi gửi câu hỏi.' });
+    }
+  }
+
+  /**
+   * Kiểm tra xem người dùng có thể đánh giá sản phẩm hay không
+   */
+  public static async checkPurchase(req: AuthenticatedRequest, res: Response) {
+    const { productId } = req.query;
+    const userId = req.user?.id;
+
+    if (!productId) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp ID sản phẩm.' });
+    }
+
+    if (!userId) {
+      return res.status(200).json({ 
+        canReview: false, 
+        reason: 'Bạn vui lòng đăng nhập để đánh giá sản phẩm.' 
+      });
+    }
+
+    try {
+      const deliveredOrder = await prisma.order.findFirst({
+        where: {
+          userId,
+          orderStatus: 'DELIVERED',
+          items: {
+            some: {
+              productId: productId as string
+            }
+          }
+        }
+      });
+
+      if (!deliveredOrder) {
+        return res.status(200).json({ 
+          canReview: false, 
+          reason: 'Bạn phải mua sản phẩm này và đơn hàng đã giao mới được review.' 
+        });
+      }
+
+      return res.status(200).json({ canReview: true });
+    } catch (error) {
+      console.error('Check purchase error:', error);
+      return res.status(500).json({ message: 'Lỗi hệ thống khi kiểm tra đơn hàng.' });
     }
   }
 }

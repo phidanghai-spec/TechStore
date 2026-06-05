@@ -31,6 +31,8 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
   const [reviewComment, setReviewComment] = useState('');
   const [reviewError, setReviewError] = useState('');
   const [reviewSuccess, setReviewSuccess] = useState('');
+  const [canReview, setCanReview] = useState(false);
+  const [reviewReason, setReviewReason] = useState('');
 
   // Q&A Form state
   const [questionText, setQuestionText] = useState('');
@@ -48,6 +50,42 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
       }
     }
   }, []);
+
+  // Check if user is allowed to review
+  useEffect(() => {
+    const checkPurchase = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setCanReview(false);
+        setReviewReason('Bạn vui lòng đăng nhập để đánh giá sản phẩm.');
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/api/reviews/check-purchase?productId=${product.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setCanReview(data.canReview);
+          setReviewReason(data.reason || '');
+        } else {
+          setCanReview(false);
+          setReviewReason('Lỗi kiểm tra quyền đánh giá.');
+        }
+      } catch (err) {
+        setCanReview(false);
+        setReviewReason('Lỗi kết nối máy chủ.');
+      }
+    };
+    if (product?.id && user) {
+      checkPurchase();
+    } else {
+      setCanReview(false);
+      setReviewReason('Bạn vui lòng đăng nhập để đánh giá sản phẩm.');
+    }
+  }, [product?.id, user]);
 
   // Fetch product detail (to refresh reviews/Q&As after submission)
   const fetchProductDetail = async () => {
@@ -342,39 +380,49 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
                 {/* 1. REVIEWS TAB */}
                 <div className="tab-pane fade show active" id="nav-reviews" role="tabpanel" aria-labelledby="nav-reviews-tab">
                   {/* Write Review Form */}
-                  <div className="bg-dark p-4 rounded border border-secondary mb-4">
-                    <h5 className="fs-7 text-white mb-3">Viết đánh giá của bạn</h5>
-                    {reviewError && <div className="alert alert-danger py-2 fs-7">{reviewError}</div>}
-                    {reviewSuccess && <div className="alert alert-success py-2 fs-7">{reviewSuccess}</div>}
-                    
-                    <form onSubmit={handleReviewSubmit}>
-                      <div className="mb-3 d-flex align-items-center gap-2">
-                        <span className="fs-7 text-secondary">Số sao:</span>
-                        <div className="stars text-warning fs-5">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <span 
-                              key={star} 
-                              onClick={() => setRating(star)} 
-                              className="cursor-pointer mx-1"
-                            >
-                              {star <= rating ? '★' : '☆'}
-                            </span>
-                          ))}
+                  {!user ? (
+                    <div className="bg-dark p-3 rounded border border-secondary mb-4 text-center fs-7 text-secondary">
+                      Bạn vui lòng đăng nhập để đánh giá sản phẩm.
+                    </div>
+                  ) : canReview ? (
+                    <div className="bg-dark p-4 rounded border border-secondary mb-4">
+                      <h5 className="fs-7 text-white mb-3">Viết đánh giá của bạn</h5>
+                      {reviewError && <div className="alert alert-danger py-2 fs-7">{reviewError}</div>}
+                      {reviewSuccess && <div className="alert alert-success py-2 fs-7">{reviewSuccess}</div>}
+                      
+                      <form onSubmit={handleReviewSubmit}>
+                        <div className="mb-3 d-flex align-items-center gap-2">
+                          <span className="fs-7 text-secondary">Số sao:</span>
+                          <div className="stars text-warning fs-5">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <span 
+                                key={star} 
+                                onClick={() => setRating(star)} 
+                                className="cursor-pointer mx-1"
+                              >
+                                {star <= rating ? '★' : '☆'}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="mb-3">
-                        <textarea 
-                          className="form-control bg-black border-secondary text-white fs-7" 
-                          rows={3}
-                          required
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          placeholder="Chia sẻ nhận xét của bạn về sản phẩm này..."
-                        ></textarea>
-                      </div>
-                      <button type="submit" className="btn btn-primary btn-sm">Gửi đánh giá</button>
-                    </form>
-                  </div>
+                        <div className="mb-3">
+                          <textarea 
+                            className="form-control bg-black border-secondary text-white fs-7" 
+                            rows={3}
+                            required
+                            value={reviewComment}
+                            onChange={(e) => setReviewComment(e.target.value)}
+                            placeholder="Chia sẻ nhận xét của bạn về sản phẩm này..."
+                          ></textarea>
+                        </div>
+                        <button type="submit" className="btn btn-primary btn-sm">Gửi đánh giá</button>
+                      </form>
+                    </div>
+                  ) : (
+                    <div className="bg-dark p-3 rounded border border-secondary mb-4 text-center fs-7 text-secondary">
+                      {reviewReason || 'Bạn phải mua sản phẩm này và đơn hàng đã giao mới được review.'}
+                    </div>
+                  )}
 
                   {/* Reviews List */}
                   <div className="d-flex flex-column gap-3">

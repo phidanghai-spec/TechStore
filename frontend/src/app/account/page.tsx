@@ -155,15 +155,20 @@ export default function AccountPage() {
     setAuthError('');
     setAuthSuccess('');
 
-    // Frontend validation for age (min 16, max 100)
-    const birthYear = new Date(dob).getFullYear();
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - birthYear;
+    // Frontend validation for age (min 16, max 100) using precise day comparison
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
     if (age < 16) {
-      setAuthError('Bạn phải đủ 16 tuổi để đăng ký');
+      setAuthError('Bạn phải từ 16 tuổi trở lên để đăng ký');
       return;
     }
-    if (age > 100) {
+    if (age > 100 || birthDate > today) {
       setAuthError('Năm sinh không hợp lệ');
       return;
     }
@@ -229,15 +234,20 @@ export default function AccountPage() {
     setProfileError('');
     setProfileSuccess('');
 
-    // Frontend validation for age (min 16, max 100)
-    const birthYear = new Date(dob).getFullYear();
-    const currentYear = new Date().getFullYear();
-    const age = currentYear - birthYear;
+    // Frontend validation for age (min 16, max 100) using precise day comparison
+    const birthDate = new Date(dob);
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--;
+    }
+
     if (age < 16) {
-      setProfileError('Bạn phải đủ 16 tuổi để cập nhật thông tin cá nhân');
+      setProfileError('Bạn phải từ 16 tuổi trở lên để cập nhật thông tin cá nhân');
       return;
     }
-    if (age > 100) {
+    if (age > 100 || birthDate > today) {
       setProfileError('Năm sinh không hợp lệ');
       return;
     }

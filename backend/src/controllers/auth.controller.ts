@@ -28,7 +28,10 @@ export class AuthController {
     }
 
     if (age < 16) {
-      return res.status(400).json({ message: 'Bạn phải đủ 16 tuổi để đăng ký tài khoản.' });
+      return res.status(400).json({ 
+        message: 'Bạn phải từ 16 tuổi trở lên để đăng ký',
+        error: 'Phải từ 16 tuổi trở lên'
+      });
     }
     if (age > 100 || birthDate > today) {
       return res.status(400).json({ message: 'Năm sinh không hợp lệ.' });
@@ -261,7 +264,10 @@ export class AuthController {
     }
 
     if (age < 16) {
-      return res.status(400).json({ message: 'Bạn phải đủ 16 tuổi để cập nhật thông tin cá nhân.' });
+      return res.status(400).json({ 
+        message: 'Bạn phải từ 16 tuổi trở lên để cập nhật thông tin cá nhân',
+        error: 'Phải từ 16 tuổi trở lên'
+      });
     }
     if (age > 100 || birthDate > today) {
       return res.status(400).json({ message: 'Năm sinh không hợp lệ.' });
