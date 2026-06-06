@@ -1,6 +1,15 @@
 import { Request, Response } from 'express';
 import prisma from '../services/prisma.service';
 
+function removeVietnameseTones(str: string): string {
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/g, 'd')
+    .replace(/Đ/g, 'D')
+    .toLowerCase();
+}
+
 export class ProductController {
   /**
    * Lấy danh sách danh mục
@@ -63,21 +72,6 @@ export class ProductController {
         where.status = status as any;
       }
 
-      if (search) {
-        const keyword = search as string;
-        where.AND = [
-          {
-            OR: [
-              { name: { contains: keyword, mode: 'insensitive' } as any },
-              { brand: { contains: keyword, mode: 'insensitive' } as any },
-              { description: { contains: keyword, mode: 'insensitive' } as any },
-              { tags: { contains: keyword, mode: 'insensitive' } as any },
-              { category: { name: { contains: keyword, mode: 'insensitive' } as any } }
-            ]
-          }
-        ];
-      }
-
       if (minPrice || maxPrice) {
         where.salePrice = {};
         if (minPrice) where.salePrice.gte = parseFloat(minPrice as string);
@@ -85,10 +79,6 @@ export class ProductController {
       }
 
       // Query database
-      // Lưu ý: Nếu có yêu cầu lọc RAM, Storage nằm trong JSON string `description`,
-      // cách tốt nhất cho tập dữ liệu nhỏ (75 sản phẩm) là lấy hết sản phẩm thoả mãn điều kiện thô trước,
-      // sau đó filter thủ công bằng JavaScript và phân trang thủ công.
-      
       const allMatchingProducts = await prisma.product.findMany({
         where,
         include: {
@@ -101,11 +91,33 @@ export class ProductController {
         orderBy: { createdAt: 'desc' }
       });
 
-      // Filter by RAM and Storage in memory (since description is JSON text)
+      // Filter by Search (accentless), RAM and Storage in memory
       let filteredProducts = allMatchingProducts;
 
+      if (search) {
+        const keywords = removeVietnameseTones(search as string)
+          .split(/\s+/)
+          .filter(word => word.length > 0);
+
+        filteredProducts = filteredProducts.filter(product => {
+          const name = removeVietnameseTones(product.name);
+          const prBrand = removeVietnameseTones(product.brand);
+          const description = removeVietnameseTones(product.description);
+          const tags = removeVietnameseTones(product.tags || '');
+          const categoryName = removeVietnameseTones(product.category?.name || '');
+
+          return keywords.every(keyword => 
+            name.includes(keyword) ||
+            prBrand.includes(keyword) ||
+            description.includes(keyword) ||
+            tags.includes(keyword) ||
+            categoryName.includes(keyword)
+          );
+        });
+      }
+
       if (ram || storage) {
-        filteredProducts = allMatchingProducts.filter(product => {
+        filteredProducts = filteredProducts.filter(product => {
           try {
             const descObj = JSON.parse(product.description);
             let matchesRam = true;
@@ -244,26 +256,34 @@ export class ProductController {
           OR: [
             { stock: { gt: 0 } },
             { status: 'HOT' }
-          ],
-          AND: [
-            {
-              OR: [
-                { name: { contains: keyword, mode: 'insensitive' } as any },
-                { brand: { contains: keyword, mode: 'insensitive' } as any },
-                { description: { contains: keyword, mode: 'insensitive' } as any },
-                { tags: { contains: keyword, mode: 'insensitive' } as any },
-                { category: { name: { contains: keyword, mode: 'insensitive' } as any } }
-              ]
-            }
           ]
         },
         include: {
           category: true
-        },
-        take: 5
+        }
       });
 
-      const suggestions = products.map(p => {
+      const keywords = removeVietnameseTones(keyword)
+        .split(/\s+/)
+        .filter(word => word.length > 0);
+
+      const matchedProducts = products.filter(product => {
+        const name = removeVietnameseTones(product.name);
+        const prBrand = removeVietnameseTones(product.brand);
+        const description = removeVietnameseTones(product.description);
+        const tags = removeVietnameseTones(product.tags || '');
+        const categoryName = removeVietnameseTones(product.category?.name || '');
+
+        return keywords.every(kw => 
+          name.includes(kw) ||
+          prBrand.includes(kw) ||
+          description.includes(kw) ||
+          tags.includes(kw) ||
+          categoryName.includes(kw)
+        );
+      }).slice(0, 5);
+
+      const suggestions = matchedProducts.map(p => {
         const discountPercent = p.originalPrice > p.salePrice 
           ? Math.round(((p.originalPrice - p.salePrice) / p.originalPrice) * 100) 
           : 0;
