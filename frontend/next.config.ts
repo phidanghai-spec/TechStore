@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
       {
         protocol: 'https',
         hostname: 'images.samsung.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cdn2.cellphones.com.vn',
+      },
+      {
+        protocol: 'https',
+        hostname: 'cellphones.com.vn',
       }
     ],
   },
