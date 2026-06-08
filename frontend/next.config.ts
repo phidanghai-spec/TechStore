@@ -1,33 +1,12 @@
+console.log("==================================================");
+console.log("LOADING NEXT CONFIG TS!!!");
+console.log("==================================================");
+
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'store.storeimages.cdn-apple.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.samsung.com',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cdn2.cellphones.com.vn',
-      },
-      {
-        protocol: 'https',
-        hostname: 'cellphones.com.vn',
-      }
-    ],
+    unoptimized: true,
   },
   async headers() {
     return [

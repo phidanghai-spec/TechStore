@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import dynamic from 'next/dynamic';
 const ChatWidget = dynamic(() => import('../components/ChatWidget'), { ssr: false });
 import ProductCard from '../components/ProductCard';
-import Image from 'next/image';
+
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 
@@ -21,7 +21,7 @@ const MOCK_PRODUCTS = [
     salePrice: 33990000,
     stock: 12,
     status: 'HOT' as const,
-    imageUrl: 'https://images.unsplash.com/photo-1727371754854-47702de29202?w=800&auto=format&fit=crop&q=80',
+    imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80',
     brand: 'Apple',
     avgRating: 5,
     ratingsCount: 28
@@ -252,13 +252,10 @@ export default function HomeClient() {
           >
             {/* Optimized background image */}
             <div className="position-absolute w-100 h-100 top-0 start-0 z-0">
-              <Image
+              <img
                 src={slide.image}
                 alt={slide.title}
-                fill
-                priority={index === 0}
-                sizes="100vw"
-                style={{ objectFit: 'cover' }}
+                style={{ objectFit: 'cover', width: '100%', height: '100%', position: 'absolute', top: 0, left: 0 }}
                 className="opacity-50"
               />
             </div>
@@ -404,13 +401,11 @@ export default function HomeClient() {
               <div key={i} className="col">
                 <Link href={`/shop?category=${cat.slug}`} className="text-decoration-none text-white text-center d-block bg-dark p-3 rounded hover-border-primary border border-secondary transition-all">
                   <div className="ratio ratio-1x1 mb-3 bg-black rounded overflow-hidden position-relative">
-                    <Image 
+                    <img 
                       src={cat.img} 
                       alt={cat.name} 
-                      fill
-                      sizes="(max-width: 768px) 33vw, 15vw"
-                      className="p-2" 
-                      style={{ objectFit: 'contain' }} 
+                      className="p-2 w-100 h-100" 
+                      style={{ objectFit: 'contain', position: 'absolute', top: 0, left: 0 }} 
                     />
                   </div>
                   <h6 className="m-0 fs-7">{cat.name}</h6>

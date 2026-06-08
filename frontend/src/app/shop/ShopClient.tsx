@@ -20,13 +20,32 @@ const removeAccents = (str: string) => {
 
 // Fallback Mock Data
 const MOCK_PRODUCTS = [
-  // Phones
-  { id: '1', name: 'iPhone 16 Pro Max 256GB', slug: 'iphone-16-pro-max-256gb', originalPrice: 34990000, salePrice: 33990000, stock: 12, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1727371754854-47702de29202?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 5, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"8 GB","storage":"256 GB"}' },
-  { id: '2', name: 'Samsung Galaxy S25 Ultra 512GB', slug: 'samsung-galaxy-s25-ultra-512gb', originalPrice: 34990000, salePrice: 31990000, stock: 0, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80', brand: 'Samsung', avgRating: 4.8, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"12 GB","storage":"512 GB"}' },
-  { id: '3', name: 'MacBook Pro 16" M4 Pro 24GB/512GB', slug: 'macbook-pro-16-inch-m4-pro-24gb-512gb', originalPrice: 75990000, salePrice: 72990000, stock: 5, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 5, category: { name: 'Laptop', slug: 'laptop' }, description: '{"ram":"24 GB","storage":"512 GB"}' },
-  { id: '4', name: 'iPhone 15 Pro Max 256GB', slug: 'iphone-15-pro-max-256gb', originalPrice: 30990000, salePrice: 28990000, stock: 25, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 4.9, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"8 GB","storage":"256 GB"}' },
-  { id: '5', name: 'Sony WH-1000XM5', slug: 'sony-wh-1000xm5', originalPrice: 8490000, salePrice: 7490000, stock: 18, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80', brand: 'Sony', avgRating: 4.7, category: { name: 'Tai nghe', slug: 'tai-nghe' }, description: '{}' },
-  { id: '6', name: 'Logitech MX Master 3S', slug: 'logitech-mx-master-3s', originalPrice: 2490000, salePrice: 2190000, stock: 45, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&auto=format&fit=crop&q=80', brand: 'Logitech', avgRating: 4.9, category: { name: 'Phụ kiện', slug: 'phu-kien' }, description: '{}' }
+  // Điện thoại
+  { id: '1', name: 'iPhone 16 Pro Max 256GB', slug: 'iphone-16-pro-max-256gb', originalPrice: 34990000, salePrice: 33990000, stock: 12, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 5, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"8 GB","storage":"256 GB"}' },
+  { id: '2', name: 'Samsung Galaxy S25 Ultra 512GB', slug: 'samsung-galaxy-s25-ultra-512gb', originalPrice: 34990000, salePrice: 31990000, stock: 10, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?w=800&auto=format&fit=crop&q=80', brand: 'Samsung', avgRating: 4.8, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"12 GB","storage":"512 GB"}' },
+  { id: '3', name: 'iPhone 15 Pro Max 256GB', slug: 'iphone-15-pro-max-256gb', originalPrice: 30990000, salePrice: 28990000, stock: 25, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 4.9, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"8 GB","storage":"256 GB"}' },
+  { id: '4', name: 'Xiaomi 14T Pro 256GB', slug: 'xiaomi-14t-pro-256gb', originalPrice: 17990000, salePrice: 15990000, stock: 15, status: 'NORMAL' as const, imageUrl: 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800&auto=format&fit=crop&q=80', brand: 'Xiaomi', avgRating: 4.5, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"12 GB","storage":"256 GB"}' },
+  
+  // Laptop
+  { id: '5', name: 'MacBook Pro 16" M4 Pro 24GB/512GB', slug: 'macbook-pro-16-inch-m4-pro-24gb-512gb', originalPrice: 75990000, salePrice: 72990000, stock: 5, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 5, category: { name: 'Laptop', slug: 'laptop' }, description: '{"ram":"24 GB","storage":"512 GB"}' },
+  { id: '6', name: 'ASUS ZenBook 14 OLED i7/16GB', slug: 'asus-zenbook-14-oled-i7-16gb', originalPrice: 28990000, salePrice: 26990000, stock: 8, status: 'NORMAL' as const, imageUrl: 'https://images.unsplash.com/photo-1593642632823-8f785ba67e45?w=800&auto=format&fit=crop&q=80', brand: 'ASUS', avgRating: 4.6, category: { name: 'Laptop', slug: 'laptop' }, description: '{"ram":"16 GB","storage":"512 GB"}' },
+  { id: '7', name: 'HP Spectre x360 i7/16GB/1TB', slug: 'hp-spectre-x360-i7-16gb-1tb', originalPrice: 42990000, salePrice: 39990000, stock: 4, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1526738549149-8e07eca6c147?w=800&auto=format&fit=crop&q=80', brand: 'HP', avgRating: 4.8, category: { name: 'Laptop', slug: 'laptop' }, description: '{"ram":"16 GB","storage":"1 TB"}' },
+  
+  // Tai nghe
+  { id: '8', name: 'Sony WH-1000XM5', slug: 'sony-wh-1000xm5', originalPrice: 8490000, salePrice: 7490000, stock: 18, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1546435770-a3e426bf472b?w=800&auto=format&fit=crop&q=80', brand: 'Sony', avgRating: 4.7, category: { name: 'Tai nghe', slug: 'tai-nghe' }, description: '{}' },
+  { id: '9', name: 'AirPods Pro 2 USB-C', slug: 'airpods-pro-2-usb-c', originalPrice: 6990000, salePrice: 6490000, stock: 30, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 4.9, category: { name: 'Tai nghe', slug: 'tai-nghe' }, description: '{}' },
+
+  // Đồng hồ
+  { id: '10', name: 'Apple Watch Ultra 2', slug: 'apple-watch-ultra-2', originalPrice: 22990000, salePrice: 21990000, stock: 12, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1434494878577-86c23bcb06b9?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 4.9, category: { name: 'Đồng hồ', slug: 'dong-ho' }, description: '{}' },
+  { id: '11', name: 'Garmin Forerunner 965', slug: 'garmin-forerunner-965', originalPrice: 16490000, salePrice: 15990000, stock: 7, status: 'NORMAL' as const, imageUrl: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=800&auto=format&fit=crop&q=80', brand: 'Garmin', avgRating: 4.8, category: { name: 'Đồng hồ', slug: 'dong-ho' }, description: '{}' },
+
+  // Phụ kiện
+  { id: '12', name: 'Logitech MX Master 3S', slug: 'logitech-mx-master-3s', originalPrice: 2490000, salePrice: 2190000, stock: 45, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=800&auto=format&fit=crop&q=80', brand: 'Logitech', avgRating: 4.9, category: { name: 'Phụ kiện', slug: 'phu-kien' }, description: '{}' },
+  { id: '13', name: 'Cáp Anker USB-C 100W', slug: 'cap-anker-usb-c-100w', originalPrice: 350000, salePrice: 290000, stock: 100, status: 'NORMAL' as const, imageUrl: 'https://images.unsplash.com/photo-1557853197-aefb550b6fdc?w=800&auto=format&fit=crop&q=80', brand: 'Anker', avgRating: 4.7, category: { name: 'Phụ kiện', slug: 'phu-kien' }, description: '{}' },
+
+  // Linh kiện
+  { id: '14', name: 'CPU AMD Ryzen 9 7950X', slug: 'cpu-amd-ryzen-9-7950x', originalPrice: 14990000, salePrice: 13990000, stock: 15, status: 'HOT' as const, imageUrl: 'https://images.unsplash.com/photo-1591488320449-011701bb6704?w=800&auto=format&fit=crop&q=80', brand: 'AMD', avgRating: 4.9, category: { name: 'Linh kiện', slug: 'linh-kien' }, description: '{}' },
+  { id: '15', name: 'SSD Samsung 970 EVO Plus 1TB', slug: 'ssd-samsung-970-evo-plus-1tb', originalPrice: 2490000, salePrice: 2190000, stock: 40, status: 'BEST_SELLER' as const, imageUrl: 'https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=800&auto=format&fit=crop&q=80', brand: 'Samsung', avgRating: 4.8, category: { name: 'Linh kiện', slug: 'linh-kien' }, description: '{}' }
 ];
 
 function ShopContent() {
@@ -47,6 +66,13 @@ function ShopContent() {
   const [storage, setStorage] = useState('');
   const [searchVal, setSearchVal] = useState(searchParams.get('search') || '');
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || '');
+
+  const [pagination, setPagination] = useState<any>({
+    totalItems: 0,
+    totalPages: 1,
+    currentPage: 1,
+    limit: 12
+  });
 
   // Fetch Categories
   useEffect(() => {
@@ -80,6 +106,7 @@ function ShopContent() {
       const brd = searchParams.get('brand') || '';
       const srch = searchParams.get('search') || '';
       const stat = searchParams.get('status') || '';
+      const pg = searchParams.get('page') || '1';
       
       if (cat) params.append('category', cat);
       if (brd) params.append('brand', brd);
@@ -89,11 +116,19 @@ function ShopContent() {
       if (storage) params.append('storage', storage);
       if (srch) params.append('search', srch);
       if (stat) params.append('status', stat);
+      params.append('page', pg);
+      params.append('limit', '12');
 
       const res = await fetch(`${BACKEND_URL}/api/products?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setProducts(data.products || []);
+        setPagination(data.pagination || {
+          totalItems: data.products?.length || 0,
+          totalPages: 1,
+          currentPage: 1,
+          limit: 12
+        });
       } else {
         fallbackFiltering(cat, brd, srch, stat);
       }
@@ -143,7 +178,17 @@ function ShopContent() {
       filtered = filtered.filter(p => p.salePrice <= parseFloat(maxPrice));
     }
 
-    setProducts(filtered);
+    const pg = parseInt(searchParams.get('page') || '1');
+    const skip = (pg - 1) * 12;
+    const paginated = filtered.slice(skip, skip + 12);
+
+    setProducts(paginated);
+    setPagination({
+      totalItems: filtered.length,
+      totalPages: Math.ceil(filtered.length / 12),
+      currentPage: pg,
+      limit: 12
+    });
   };
 
   const handleCategoryChange = (val: string) => {
@@ -151,6 +196,7 @@ function ShopContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set('category', val);
     else params.delete('category');
+    params.set('page', '1');
     router.push(`/shop?${params.toString()}`);
   };
 
@@ -159,6 +205,7 @@ function ShopContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set('brand', val);
     else params.delete('brand');
+    params.set('page', '1');
     router.push(`/shop?${params.toString()}`);
   };
 
@@ -167,12 +214,23 @@ function ShopContent() {
     const params = new URLSearchParams(searchParams.toString());
     if (val) params.set('status', val);
     else params.delete('status');
+    params.set('page', '1');
     router.push(`/shop?${params.toString()}`);
   };
 
   const handleApplyFilter = (e: React.FormEvent) => {
     e.preventDefault();
-    loadProducts();
+    const params = new URLSearchParams(searchParams.toString());
+    if (searchVal) params.set('search', searchVal);
+    else params.delete('search');
+    params.set('page', '1');
+    router.push(`/shop?${params.toString()}`);
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`/shop?${params.toString()}`);
   };
 
   const handleResetFilter = () => {
@@ -338,11 +396,101 @@ function ShopContent() {
               <button onClick={handleResetFilter} className="btn btn-primary btn-sm">Quay lại cửa hàng</button>
             </div>
           ) : (
-            <div className="row row-cols-2 row-cols-md-3 g-4">
-              {products.map(product => (
-                <ProductCard key={product.id} product={product} />
-              ))}
-            </div>
+            <>
+              <div className="row row-cols-2 row-cols-md-3 g-4 mb-5">
+                {products.map(product => (
+                  <ProductCard key={product.id} product={product} />
+                ))}
+              </div>
+
+              {/* Phân trang */}
+              {pagination.totalPages > 1 && (
+                <div className="d-flex flex-column align-items-center gap-2 mt-4 mb-3">
+                  <p className="text-secondary fs-7 mb-1">
+                    Trang <strong className="text-white">{pagination.currentPage}</strong> / <strong className="text-white">{pagination.totalPages}</strong>
+                    &nbsp;— Tổng <strong className="text-white">{pagination.totalItems}</strong> sản phẩm
+                  </p>
+                  <nav aria-label="Product pagination">
+                    <ul className="pagination mb-0" style={{ gap: '4px' }}>
+                      {/* Nút trang trước */}
+                      <li className={`page-item ${pagination.currentPage === 1 ? 'disabled' : ''}`}>
+                        <button
+                          type="button"
+                          className="page-link"
+                          style={{
+                            background: pagination.currentPage === 1 ? '#1a1a1a' : '#e50914',
+                            borderColor: pagination.currentPage === 1 ? '#444' : '#e50914',
+                            color: pagination.currentPage === 1 ? '#666' : '#fff',
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            padding: '6px 14px',
+                            cursor: pagination.currentPage === 1 ? 'not-allowed' : 'pointer',
+                          }}
+                          onClick={() => handlePageChange(pagination.currentPage - 1)}
+                          disabled={pagination.currentPage === 1}
+                        >
+                          ← Trước
+                        </button>
+                      </li>
+
+                      {/* Danh sách các số trang (chỉ hiện tối đa 5 trang gần nhất) */}
+                      {Array.from({ length: pagination.totalPages }, (_, index) => {
+                        const pageNum = index + 1;
+                        const isActive = pagination.currentPage === pageNum;
+                        // Hiện: trang đầu, trang cuối, và 2 trang xung quanh trang hiện tại
+                        const nearCurrent = Math.abs(pageNum - pagination.currentPage) <= 1;
+                        const isEdge = pageNum === 1 || pageNum === pagination.totalPages;
+                        if (!nearCurrent && !isEdge) return null;
+                        return (
+                          <li key={pageNum} className="page-item">
+                            <button
+                              type="button"
+                              className="page-link"
+                              style={{
+                                background: isActive ? '#e50914' : '#1e1e1e',
+                                borderColor: isActive ? '#e50914' : '#444',
+                                color: '#fff',
+                                borderRadius: '6px',
+                                fontWeight: isActive ? 700 : 400,
+                                minWidth: '40px',
+                                textAlign: 'center',
+                                boxShadow: isActive ? '0 0 10px rgba(229,9,20,0.5)' : 'none',
+                                transform: isActive ? 'scale(1.08)' : 'scale(1)',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onClick={() => handlePageChange(pageNum)}
+                            >
+                              {pageNum}
+                            </button>
+                          </li>
+                        );
+                      })}
+
+                      {/* Nút trang sau */}
+                      <li className={`page-item ${pagination.currentPage === pagination.totalPages ? 'disabled' : ''}`}>
+                        <button
+                          type="button"
+                          className="page-link"
+                          style={{
+                            background: pagination.currentPage === pagination.totalPages ? '#1a1a1a' : '#e50914',
+                            borderColor: pagination.currentPage === pagination.totalPages ? '#444' : '#e50914',
+                            color: pagination.currentPage === pagination.totalPages ? '#666' : '#fff',
+                            borderRadius: '6px',
+                            fontWeight: 600,
+                            padding: '6px 14px',
+                            cursor: pagination.currentPage === pagination.totalPages ? 'not-allowed' : 'pointer',
+                          }}
+                          onClick={() => handlePageChange(pagination.currentPage + 1)}
+                          disabled={pagination.currentPage === pagination.totalPages}
+                        >
+                          Sau →
+                        </button>
+                      </li>
+                    </ul>
+                  </nav>
+                </div>
+              )}
+            </>
           )}
         </div>
 

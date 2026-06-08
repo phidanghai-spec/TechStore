@@ -151,11 +151,45 @@ export default function CheckoutPage() {
       if (res.ok) {
         // Clear Cart
         localStorage.removeItem('cart');
-        window.dispatchEvent(new Event('cart-updated')); // Update header
+        window.dispatchEvent(new Event('cart-updated'));
 
-        // Redirect to success page or show alert
-        alert(`Đặt hàng thành công! Mã đơn hàng: #${data.orderId.toUpperCase()}. Email xác nhận đã được gửi.`);
-        router.push('/');
+        if (paymentMethod === 'MOMO') {
+          // Gọi MoMo API để tạo link thanh toán thực
+          try {
+            const momoRes = await fetch(`${BACKEND_URL}/api/payments/momo/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: data.orderId,
+                amount: Math.round(finalPayable),
+                orderInfo: `TechStore - Thanh toán đơn hàng #${data.orderId.substring(0, 8).toUpperCase()}`
+              })
+            });
+            const momoData = await momoRes.json();
+
+            if (momoData.success && momoData.payUrl) {
+              localStorage.setItem('pendingOrderId', data.orderId);
+              // Redirect đến trang thanh toán MoMo thực
+              window.location.href = momoData.payUrl;
+              return;
+            } else {
+              alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nKhông thể kết nối cổng MoMo (${momoData.message || 'lỗi không xác định'}). Vui lòng thanh toán COD khi nhận hàng.`);
+              router.push('/');
+            }
+          } catch {
+            alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nKhông thể mở cổng MoMo. Vui lòng thanh toán khi nhận hàng.`);
+            router.push('/');
+          }
+        } else if (paymentMethod === 'PAYPAL') {
+          localStorage.setItem('pendingOrderId', data.orderId);
+          alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nĐang chuyển đến cổng thanh toán PayPal Sandbox...`);
+          window.open(`https://www.sandbox.paypal.com/checkoutnow`, '_blank');
+          router.push('/');
+        } else {
+          // COD
+          alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nEmail xác nhận đã được gửi đến ${customerEmail}.\nNhân viên sẽ liên hệ xác nhận trong thời gian sớm nhất.`);
+          router.push('/');
+        }
       } else {
         setOrderError(data.message || 'Không thể tạo đơn hàng. Vui lòng kiểm tra lại.');
       }

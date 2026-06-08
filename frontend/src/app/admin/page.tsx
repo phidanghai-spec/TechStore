@@ -142,7 +142,10 @@ export default function AdminPage() {
   const fetchStats = async () => {
     setStatsLoading(true);
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/stats`, { headers: getHeaders() });
+      const params = new URLSearchParams();
+      if (statsStartDate) params.append('startDate', statsStartDate);
+      if (statsEndDate) params.append('endDate', statsEndDate);
+      const res = await fetch(`${BACKEND_URL}/api/admin/stats?${params.toString()}`, { headers: getHeaders() });
       if (res.ok) setStats(await res.json());
     } catch (e) { console.error(e); }
     setStatsLoading(false);
@@ -164,7 +167,11 @@ export default function AdminPage() {
 
   const fetchAdminOrders = async () => {
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/orders`, { headers: getHeaders() });
+      const params = new URLSearchParams();
+      if (orderStartDate) params.append('startDate', orderStartDate);
+      if (orderEndDate) params.append('endDate', orderEndDate);
+      if (orderStatusFilter) params.append('status', orderStatusFilter);
+      const res = await fetch(`${BACKEND_URL}/api/admin/orders?${params.toString()}`, { headers: getHeaders() });
       if (res.ok) setOrders(await res.json());
     } catch (e) { console.error(e); }
   };
@@ -225,7 +232,8 @@ export default function AdminPage() {
       status: prodStatus,
       imageUrl: prodImg,
       description: prodDesc,
-      tags: prodTags
+      tags: prodTags,
+      isVisible: prodVisible
     };
 
     try {
@@ -259,6 +267,7 @@ export default function AdminPage() {
     setProdImg(p.imageUrl);
     setProdDesc(p.description);
     setProdTags(p.tags);
+    setProdVisible(p.isVisible);
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -307,6 +316,7 @@ export default function AdminPage() {
     setProdImg('');
     setProdDesc('');
     setProdTags('');
+    setProdVisible(true);
   };
 
   // ==========================================
@@ -774,6 +784,36 @@ export default function AdminPage() {
                 {activeTab === 'dashboard' && (
                   <div>
                     <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Báo cáo doanh thu & Hoạt động</h4>
+                    
+                    {/* Stats Filter Bar */}
+                    <div className="d-flex gap-2 mb-4 flex-wrap align-items-end bg-black p-3 rounded border border-secondary">
+                      <div>
+                        <label className="form-label fs-8 text-secondary">Từ ngày</label>
+                        <input type="date" className="form-control form-control-sm bg-dark border-secondary text-white fs-7" value={statsStartDate} onChange={(e) => setStatsStartDate(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="form-label fs-8 text-secondary">Đến ngày</label>
+                        <input type="date" className="form-control form-control-sm bg-dark border-secondary text-white fs-7" value={statsEndDate} onChange={(e) => setStatsEndDate(e.target.value)} />
+                      </div>
+                      <button onClick={fetchStats} className="btn btn-primary btn-sm px-3">Lọc thống kê</button>
+                      {(statsStartDate || statsEndDate) && (
+                        <button onClick={() => { 
+                          setStatsStartDate(''); 
+                          setStatsEndDate(''); 
+                          // Fetch directly with empty params to avoid stale state in same tick
+                          const resCall = async () => {
+                            setStatsLoading(true);
+                            try {
+                              const res = await fetch(`${BACKEND_URL}/api/admin/stats`, { headers: getHeaders() });
+                              if (res.ok) setStats(await res.json());
+                            } catch (e) { console.error(e); }
+                            setStatsLoading(false);
+                          };
+                          resCall();
+                        }} className="btn btn-outline-secondary btn-sm">Bỏ lọc</button>
+                      )}
+                    </div>
+
                     {statsLoading ? (
                       <p className="text-center text-secondary py-5">Đang xử lý dữ liệu thống kê...</p>
                     ) : stats ? (
@@ -861,6 +901,12 @@ export default function AdminPage() {
                             <option value="BEST_SELLER">Bán chạy (BEST_SELLER)</option>
                           </select>
                         </div>
+                        <div className="col-md-3 mb-3 d-flex align-items-end" style={{ minHeight: '68px' }}>
+                          <div className="form-check form-switch mb-2">
+                            <input className="form-check-input" type="checkbox" id="prodVisibleCheckbox" checked={prodVisible} onChange={(e) => setProdVisible(e.target.checked)} />
+                            <label className="form-check-label fs-8 text-secondary" htmlFor="prodVisibleCheckbox">Hiển thị trên web</label>
+                          </div>
+                        </div>
                         <div className="col-md-6 mb-3">
                           <label className="form-label fs-8 text-secondary">URL hình ảnh</label>
                           <input type="text" className="form-control bg-dark border-secondary text-white fs-7" required value={prodImg} onChange={(e) => setProdImg(e.target.value)} placeholder="https://images.unsplash.com/..." />
@@ -945,6 +991,45 @@ export default function AdminPage() {
                 {activeTab === 'orders' && (
                   <div>
                     <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Xử lý đơn hàng</h4>
+
+                    {/* Order Filter Bar */}
+                    <div className="d-flex gap-2 mb-4 flex-wrap align-items-end bg-black p-3 rounded border border-secondary">
+                      <div>
+                        <label className="form-label fs-8 text-secondary">Từ ngày</label>
+                        <input type="date" className="form-control form-control-sm bg-dark border-secondary text-white fs-7" value={orderStartDate} onChange={(e) => setOrderStartDate(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="form-label fs-8 text-secondary">Đến ngày</label>
+                        <input type="date" className="form-control form-control-sm bg-dark border-secondary text-white fs-7" value={orderEndDate} onChange={(e) => setOrderEndDate(e.target.value)} />
+                      </div>
+                      <div>
+                        <label className="form-label fs-8 text-secondary">Trạng thái</label>
+                        <select className="form-select form-select-sm bg-dark border-secondary text-white fs-7" value={orderStatusFilter} onChange={(e) => setOrderStatusFilter(e.target.value)}>
+                          <option value="">Tất cả trạng thái</option>
+                          <option value="PENDING">Chờ duyệt (PENDING)</option>
+                          <option value="APPROVED">Đã duyệt (APPROVED)</option>
+                          <option value="SHIPPING">Đang giao (SHIPPING)</option>
+                          <option value="DELIVERED">Đã giao (DELIVERED)</option>
+                          <option value="CANCELLED">Đã hủy (CANCELLED)</option>
+                        </select>
+                      </div>
+                      <button onClick={fetchAdminOrders} className="btn btn-primary btn-sm px-3">Lọc</button>
+                      {(orderStartDate || orderEndDate || orderStatusFilter) && (
+                        <button onClick={() => { 
+                          setOrderStartDate(''); 
+                          setOrderEndDate(''); 
+                          setOrderStatusFilter('');
+                          // Fetch directly with empty params to avoid stale state in same tick
+                          const resCall = async () => {
+                            try {
+                              const res = await fetch(`${BACKEND_URL}/api/admin/orders`, { headers: getHeaders() });
+                              if (res.ok) setOrders(await res.json());
+                            } catch (e) { console.error(e); }
+                          };
+                          resCall();
+                        }} className="btn btn-outline-secondary btn-sm">Bỏ lọc</button>
+                      )}
+                    </div>
 
                     {/* Delivery Assignment Modal Form */}
                     {assigningOrderId && (

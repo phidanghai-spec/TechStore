@@ -907,7 +907,12 @@ export default function AccountPage() {
               </svg>
             </div>
             <h5 className="text-white mb-2">Đăng nhập Facebook</h5>
-            <p className="fs-8 text-secondary mb-4">Mô phỏng tích hợp SDK Đăng nhập một chạm của Facebook.</p>
+            <p className="fs-8 text-secondary mb-3">Mô phỏng tích hợp SDK Đăng nhập một chạm của Facebook.</p>
+            
+            <div className="alert alert-info py-2 px-3 fs-8 text-start mb-3" style={{ backgroundColor: 'rgba(13,110,253,0.1)', borderColor: 'rgba(13,110,253,0.3)', color: '#9ec5fe' }}>
+              💡 <strong>Lưu ý chấm bài/demo:</strong> <br />
+              Tính năng này giả lập SDK Facebook để đăng nhập trực tiếp vào các tài khoản có sẵn nhằm kiểm thử tính năng **Tích lũy điểm** & **Giảm giá theo Hạng thành viên** (Bạc / Vàng / Bạch Kim) một cách thuận tiện nhất.
+            </div>
             
             {facebookLoading ? (
               <div className="spinner-border text-info my-3" role="status"></div>

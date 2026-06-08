@@ -349,6 +349,38 @@ export class AdminController {
     }
   }
 
+  /**
+   * Cập nhật mã giảm giá
+   */
+  public static async updateCoupon(req: Request, res: Response) {
+    const { id } = req.params;
+    const { code, discountType, discountValue, maxUsage, expiryDate } = req.body;
+
+    if (!code || !discountType || discountValue === undefined || !expiryDate) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin mã giảm giá.' });
+    }
+
+    try {
+      const coupon = await prisma.coupon.update({
+        where: { id },
+        data: {
+          code: code.toUpperCase(),
+          discountType,
+          discountValue: parseFloat(discountValue),
+          maxUsage: parseInt(maxUsage || 1),
+          expiryDate: new Date(expiryDate)
+        }
+      });
+      return res.status(200).json({ message: 'Cập nhật mã giảm giá thành công.', coupon });
+    } catch (error: any) {
+      console.error('Update coupon error:', error);
+      if (error.code === 'P2002') {
+        return res.status(400).json({ message: 'Mã giảm giá này đã tồn tại.' });
+      }
+      return res.status(500).json({ message: 'Lỗi hệ thống khi cập nhật mã giảm giá.' });
+    }
+  }
+
   // ==========================================
   // 2.4 CHĂM SÓC KHÁCH HÀNG
   // ==========================================

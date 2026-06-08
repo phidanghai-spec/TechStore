@@ -28,6 +28,7 @@ router.put('/warranties/:id', WarrantyController.updateWarrantyStatus);
 // Coupon Management
 router.get('/coupons', AdminController.getAllCoupons);
 router.post('/coupons', AdminController.createCoupon);
+router.put('/coupons/:id', AdminController.updateCoupon);
 router.delete('/coupons/:id', AdminController.deleteCoupon);
 
 // Q&A and Review Moderation

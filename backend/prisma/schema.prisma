@@ -103,6 +103,11 @@ model Product {
   reviews       ProductReview[]
   qnas          ProductQna[]
   warranties    Warranty[]
+
+  @@index([isVisible, status])
+  @@index([brand])
+  @@index([categoryId])
+  @@index([createdAt])
 }
 
 model Order {
@@ -124,6 +129,10 @@ model Order {
   updatedAt      DateTime      @updatedAt
   items          OrderItem[]
   warranties     Warranty[]
+
+  @@index([userId])
+  @@index([orderStatus])
+  @@index([createdAt])
 }
 
 model OrderItem {

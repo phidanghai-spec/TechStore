@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
 import { useState } from 'react';
 import { validateProductImage } from '../utils/image';
 
@@ -96,10 +95,17 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <div className="col mb-4">
-      <div className="product-card bg-black p-3 border border-secondary rounded d-flex flex-column h-100" style={{ overflow: 'hidden' }}>
+      <div className="product-card position-relative bg-black p-3 border border-secondary rounded d-flex flex-column h-100" style={{ overflow: 'hidden' }}>
         
         {/* Badges / Overlays */}
         <div className="position-absolute top-0 start-0 m-3 z-3 d-flex flex-column gap-1">
+          {stock === 0 && (
+            status === 'HOT' ? (
+              <span className="badge bg-danger text-white fw-bold">CHÁY HÀNG</span>
+            ) : (
+              <span className="badge bg-secondary text-white fw-bold">HẾT HÀNG</span>
+            )
+          )}
           {status === 'HOT' && (
             <span className="badge bg-warning text-black fw-bold">HOT</span>
           )}
@@ -111,25 +117,14 @@ export default function ProductCard({ product }: ProductCardProps) {
           )}
         </div>
 
-        {/* Stock status overlay */}
-        {stock === 0 && (
-          status === 'HOT' ? (
-            <div className="hot-sold-out-overlay bg-danger text-white">CHÁY HÀNG</div>
-          ) : (
-            <div className="sold-out-overlay" style={{ backgroundColor: '#555555' }}>HẾT HÀNG</div>
-          )
-        )}
-
         {/* Product Image Link */}
         <div className="image-holder position-relative overflow-hidden rounded bg-dark d-flex align-items-center justify-content-center" style={{ height: '220px' }}>
           <Link href={`/san-pham/${slug}`} className="w-100 h-100 d-flex align-items-center justify-content-center position-relative">
-            <Image 
+            <img 
               src={imgSrc} 
               alt={name} 
-              fill
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
-              className="product-image transition-transform duration-300 hover-scale"
-              style={{ objectFit: 'contain', padding: '10px' }}
+              className="product-image transition-transform duration-300 hover-scale w-100 h-100"
+              style={{ objectFit: 'contain', padding: '10px', position: 'absolute', top: 0, left: 0 }}
               onError={() => {
                 setImgSrc('https://placehold.co/600x600/1a1a1a/ffffff?text=TechStore');
               }}

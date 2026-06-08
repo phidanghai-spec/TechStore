@@ -50,9 +50,13 @@ export class ProductController {
       // Build filters
       const where: any = {
         isVisible: true,
-        OR: [
-          { stock: { gt: 0 } },
-          { status: 'HOT' }
+        AND: [
+          {
+            OR: [
+              { stock: { gt: 0 } },
+              { status: 'HOT' }
+            ]
+          }
         ]
       };
 
@@ -76,6 +80,18 @@ export class ProductController {
         where.salePrice = {};
         if (minPrice) where.salePrice.gte = parseFloat(minPrice as string);
         if (maxPrice) where.salePrice.lte = parseFloat(maxPrice as string);
+      }
+
+      if (search) {
+        const cleanSearch = (search as string).trim();
+        where.AND.push({
+          OR: [
+            { name: { contains: cleanSearch } },
+            { brand: { contains: cleanSearch } },
+            { tags: { contains: cleanSearch } },
+            { description: { contains: cleanSearch } }
+          ]
+        });
       }
 
       // Query database

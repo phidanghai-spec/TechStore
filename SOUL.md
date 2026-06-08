@@ -16,7 +16,7 @@ This template is the answer to that problem. It imposes a structure — speciali
 
 The central idea here is specialization.
 
-One omnipotent AI trying to do everything produces mediocre everything. Twelve focused agents — each with a defined domain, a set of documents they own, and a protocol they follow — produce coherent, professional work. The systems architect doesn't touch the frontend. The copywriter doesn't touch the database. The QA engineer doesn't decide the API design. Each stays in their lane, and together the lanes add up to a product.
+One omnipotent AI trying to do everything produces mediocre everything. Twelve protocol they follow — produce coherent, professional work. The systems architect doesn't touch the frontend. The copywriter doesn't touch the database. The QA engineer doesn't decide the API design. Each stays in their lane, and together the lanes add up to a product.
 
 This is not a limitation. It's how good teams work. A film crew doesn't have one person operating the camera, writing the script, composing the score, and handling craft services simultaneously. The director doesn't improvise the cinematography. Boundaries are what allow depth.
 

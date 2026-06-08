@@ -58,6 +58,7 @@ import qnaRoutes from './routes/qna.routes';
 import chatRoutes from './routes/chat.routes';
 import adminRoutes from './routes/admin.routes';
 import warrantyRoutes from './routes/warranty.routes';
+import paymentRoutes from './routes/payment.routes';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
@@ -68,6 +69,7 @@ app.use('/api/qnas', qnaRoutes);
 app.use('/api/chats', chatRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/warranties', warrantyRoutes);
+app.use('/api/payments', paymentRoutes);
 
 // Error Handling Middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
