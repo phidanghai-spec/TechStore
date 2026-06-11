@@ -56,6 +56,18 @@ export default function AdminPage() {
   const [deliveryStaffName, setDeliveryStaffName] = useState('');
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
 
+  // Dashboard Filter State
+  const [statsStartDate, setStatsStartDate] = useState('');
+  const [statsEndDate, setStatsEndDate] = useState('');
+
+  // Orders Filter State
+  const [orderStartDate, setOrderStartDate] = useState('');
+  const [orderEndDate, setOrderEndDate] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState('');
+
+  // Product Visibility State
+  const [prodVisible, setProdVisible] = useState(true);
+
   // Users State
   const [users, setUsers] = useState<any[]>([]);
 
