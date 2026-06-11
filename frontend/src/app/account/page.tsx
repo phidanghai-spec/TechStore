@@ -59,6 +59,47 @@ export default function AccountPage() {
   const [profileError, setProfileError] = useState('');
 
   useEffect(() => {
+    // Check for query parameters from Facebook OAuth redirect callback
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenParam = urlParams.get('token');
+      const userParam = urlParams.get('user');
+      const errorParam = urlParams.get('error');
+
+      if (errorParam) {
+        setAuthError(decodeURIComponent(errorParam));
+        // Clean up URL
+        const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+        window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+      } else if (tokenParam && userParam) {
+        try {
+          const decodedUser = decodeURIComponent(userParam);
+          localStorage.setItem('token', tokenParam);
+          localStorage.setItem('user', decodedUser);
+          
+          const parsed = JSON.parse(decodedUser);
+          setUser(parsed);
+          setFullName(parsed.fullName);
+          setPhone(parsed.phone);
+          setAddress(parsed.address);
+          setAddress2(parsed.address2 || '');
+          setBankAccount(parsed.bankAccount || '');
+          setDob(parsed.dob ? parsed.dob.substring(0, 10) : '');
+          
+          setIsLoggedIn(true);
+          setAuthSuccess('Đăng nhập bằng Facebook thành công!');
+          window.dispatchEvent(new Event('user-logged-in')); // Notify Header
+          
+          // Clean up URL
+          const cleanUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: cleanUrl }, '', cleanUrl);
+        } catch (e) {
+          console.error('Error handling Facebook redirect parameters:', e);
+          setAuthError('Không thể xử lý thông tin đăng nhập từ Facebook.');
+        }
+      }
+    }
+
     const token = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
 
@@ -557,11 +598,28 @@ export default function AccountPage() {
                         <hr className="flex-grow-1 border-secondary m-0" />
                       </div>
                       
-                      <button type="button" onClick={() => setShowFacebookMock(true)} className="w-100 btn btn-outline-info btn-sm mb-3 py-2 d-flex align-items-center justify-content-center gap-2" style={{ borderColor: '#3b5998', color: '#8b9dc3' }}>
+                      <button 
+                        type="button" 
+                        onClick={() => {
+                          setAuthError('');
+                          window.location.href = `${BACKEND_URL}/api/auth/facebook`;
+                        }} 
+                        className="w-100 btn btn-primary btn-sm mb-2 py-2 d-flex align-items-center justify-content-center gap-2" 
+                        style={{ backgroundColor: '#1877f2', borderColor: '#1877f2', color: '#fff' }}
+                      >
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" className="bi bi-facebook" viewBox="0 0 16 16">
                           <path d="M16 8.049c0-4.446-3.582-8.05-8-8.05C3.58 0-.002 3.603-.002 8.05c0 4.017 2.926 7.347 6.75 7.951v-5.625h-2.03V8.05H6.75V6.275c0-2.017 1.195-3.131 3.022-3.131.876 0 1.791.157 1.791.157v1.98h-1.009c-.993 0-1.303.621-1.303 1.258v1.51h2.218l-.354 2.326H9.25V16c3.824-.604 6.75-3.934 6.75-7.951"/>
                         </svg>
                         Đăng nhập bằng Facebook
+                      </button>
+
+                      <button 
+                        type="button" 
+                        onClick={() => setShowFacebookMock(true)} 
+                        className="w-100 btn btn-outline-secondary btn-sm mb-3 py-2 d-flex align-items-center justify-content-center gap-2 fs-8" 
+                        style={{ borderStyle: 'dashed', color: '#8b9dc3' }}
+                      >
+                        Giả lập Facebook Login (Để chấm bài)
                       </button>
 
                       <p className="text-secondary fs-8 text-center m-0">
