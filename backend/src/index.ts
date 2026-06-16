@@ -15,14 +15,22 @@ const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 const allowedOrigins = [
   'http://localhost:3000',
-  process.env.FRONTEND_URL,
-  /https:\/\/.*\.vercel\.app$/
-].filter(Boolean);
+  process.env.FRONTEND_URL
+].filter(Boolean) as string[];
 
 // Middlewares
 app.use(compression());
 app.use(cors({
-  origin: allowedOrigins as any,
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, postman, curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1 || /https:\/\/.*\.vercel\.app$/.test(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
