@@ -646,10 +646,20 @@ export class AdminController {
         orderStatus: 'DELIVERED' // Chỉ tính doanh thu trên đơn hàng giao thành công
       };
 
-      if (startDate || endDate) {
-        dateFilter.createdAt = {};
-        if (startDate) dateFilter.createdAt.gte = new Date(startDate as string);
-        if (endDate) dateFilter.createdAt.lte = new Date(endDate as string);
+      if (startDate && typeof startDate === 'string' && startDate.trim() !== '') {
+        const d = new Date(startDate);
+        if (!isNaN(d.getTime())) {
+          dateFilter.createdAt = dateFilter.createdAt || {};
+          dateFilter.createdAt.gte = d;
+        }
+      }
+
+      if (endDate && typeof endDate === 'string' && endDate.trim() !== '') {
+        const d = new Date(endDate);
+        if (!isNaN(d.getTime())) {
+          dateFilter.createdAt = dateFilter.createdAt || {};
+          dateFilter.createdAt.lte = d;
+        }
       }
 
       // 1. Total Revenue
@@ -668,10 +678,19 @@ export class AdminController {
 
       // 3. Order status count
       const allOrdersFilter: any = {};
-      if (startDate || endDate) {
-        allOrdersFilter.createdAt = {};
-        if (startDate) allOrdersFilter.createdAt.gte = new Date(startDate as string);
-        if (endDate) allOrdersFilter.createdAt.lte = new Date(endDate as string);
+      if (startDate && typeof startDate === 'string' && startDate.trim() !== '') {
+        const d = new Date(startDate);
+        if (!isNaN(d.getTime())) {
+          allOrdersFilter.createdAt = allOrdersFilter.createdAt || {};
+          allOrdersFilter.createdAt.gte = d;
+        }
+      }
+      if (endDate && typeof endDate === 'string' && endDate.trim() !== '') {
+        const d = new Date(endDate);
+        if (!isNaN(d.getTime())) {
+          allOrdersFilter.createdAt = allOrdersFilter.createdAt || {};
+          allOrdersFilter.createdAt.lte = d;
+        }
       }
 
       const statusCounts = await prisma.order.groupBy({
@@ -715,9 +734,9 @@ export class AdminController {
         chartData
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Get statistics error:', error);
-      return res.status(500).json({ message: 'Lỗi hệ thống khi tải báo cáo thống kê.' });
+      return res.status(500).json({ message: error?.message || 'Lỗi hệ thống khi tải báo cáo thống kê.' });
     }
   }
 
