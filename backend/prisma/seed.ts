@@ -1804,29 +1804,18 @@ async function main() {
       });
 
       let paymentStatus: PaymentStatus = PaymentStatus.PENDING;
-      let isDebt = false;
       let deliveryStaff = null;
 
       if (status === OrderStatus.DELIVERED) {
-        if (method === PaymentMethod.COD) {
-          // 70% of COD delivered orders are paid, 30% are pending debt
-          if (Math.random() < 0.3) {
-            paymentStatus = PaymentStatus.PENDING;
-            isDebt = true;
-            deliveryStaff = 'Nguyễn Văn Shipper';
-          } else {
-            paymentStatus = PaymentStatus.PAID;
-          }
-        } else {
-          paymentStatus = PaymentStatus.PAID;
-        }
+        paymentStatus = PaymentStatus.PAID;
+        deliveryStaff = 'Nguyễn Văn Shipper';
       } else if (status === OrderStatus.CANCELLED) {
         paymentStatus = PaymentStatus.FAILED;
       } else if (method !== PaymentMethod.COD && status !== OrderStatus.PENDING) {
         paymentStatus = PaymentStatus.PAID;
       }
 
-      const order = await prisma.order.create({
+      const order: any = await prisma.order.create({
         data: {
           userId: user.id,
           customerName: user.fullName,
@@ -1838,7 +1827,6 @@ async function main() {
           orderStatus: status,
           totalAmount: total,
           discountAmount: 0,
-          isDebt,
           deliveryStaff,
           createdAt: orderDate,
           updatedAt: orderDate,
@@ -1852,7 +1840,7 @@ async function main() {
       });
 
       // Create warranty for delivered items
-      if (status === OrderStatus.DELIVERED) {
+      if (status === OrderStatus.DELIVERED && order.items) {
         for (const item of order.items) {
           const warrantyStart = orderDate;
           const warrantyEnd = new Date(warrantyStart);
