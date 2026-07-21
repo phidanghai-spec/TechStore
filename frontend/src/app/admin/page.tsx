@@ -247,8 +247,15 @@ export default function AdminPage() {
       if (orderEndDate) params.append('endDate', orderEndDate);
       if (orderStatusFilter) params.append('status', orderStatusFilter);
       const res = await fetch(`${BACKEND_URL}/api/admin/orders?${params.toString()}`, { headers: getHeaders() });
-      if (res.ok) setOrders(await res.json());
-    } catch (e) { console.error(e); }
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(Array.isArray(data) ? data : []);
+      } else {
+        console.error('Fetch admin orders response not ok:', res.status);
+      }
+    } catch (e) {
+      console.error('Fetch admin orders error:', e);
+    }
   };
 
   const fetchAdminUsers = async () => {
@@ -1238,8 +1245,15 @@ export default function AdminPage() {
                           </tr>
                         </thead>
                         <tbody>
-                          {orders.map((o, i) => (
-                            <tr key={i}>
+                          {orders.length === 0 ? (
+                            <tr>
+                              <td colSpan={9} className="text-center text-secondary py-4 fs-7">
+                                Không tìm thấy đơn hàng nào.
+                              </td>
+                            </tr>
+                          ) : (
+                            orders.map((o, i) => (
+                              <tr key={i}>
                               <td className="ps-3">#{o.id.substring(0, 8).toUpperCase()}</td>
                               <td>
                                 {o.user ? (
@@ -1281,7 +1295,7 @@ export default function AdminPage() {
                                 )}
                               </td>
                             </tr>
-                          ))}
+                          )))}
                         </tbody>
                       </table>
                     </div>
