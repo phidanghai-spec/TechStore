@@ -487,14 +487,24 @@ export class AdminController {
     try {
       const where: any = {};
 
-      if (status) {
+      if (status && typeof status === 'string' && status.trim() !== '') {
         where.orderStatus = status as any;
       }
 
-      if (startDate || endDate) {
-        where.createdAt = {};
-        if (startDate) where.createdAt.gte = new Date(startDate as string);
-        if (endDate) where.createdAt.lte = new Date(endDate as string);
+      if (startDate && typeof startDate === 'string' && startDate.trim() !== '') {
+        const d = new Date(startDate);
+        if (!isNaN(d.getTime())) {
+          where.createdAt = where.createdAt || {};
+          where.createdAt.gte = d;
+        }
+      }
+
+      if (endDate && typeof endDate === 'string' && endDate.trim() !== '') {
+        const d = new Date(endDate);
+        if (!isNaN(d.getTime())) {
+          where.createdAt = where.createdAt || {};
+          where.createdAt.lte = d;
+        }
       }
 
       const orders = await prisma.order.findMany({
@@ -516,9 +526,9 @@ export class AdminController {
       });
 
       return res.status(200).json(orders);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Get all orders admin error:', error);
-      return res.status(500).json({ message: 'Không thể tải danh sách đơn hàng.' });
+      return res.status(500).json({ message: error?.message || 'Không thể tải danh sách đơn hàng.' });
     }
   }
 
