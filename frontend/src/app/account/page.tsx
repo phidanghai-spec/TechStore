@@ -42,11 +42,16 @@ export default function AccountPage() {
   const [forgotEmail, setForgotEmail] = useState('');
 
   // Logged-in Dashboard state
-  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'loyalty' | 'security' | 'warranties'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'orders' | 'loyalty' | 'security' | 'warranties' | 'vouchers'>('profile');
   const [myOrders, setMyOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Vouchers state
+  const [myVouchers, setMyVouchers] = useState<any[]>([]);
+  const [vouchersLoading, setVouchersLoading] = useState(false);
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
 
   // Modal hủy đơn
   const [cancelModal, setCancelModal] = useState<{ orderId: string; open: boolean }>({ orderId: '', open: false });
@@ -154,7 +159,28 @@ export default function AccountPage() {
     if (isLoggedIn && activeTab === 'orders') {
       fetchMyOrders();
     }
+    if (isLoggedIn && activeTab === 'vouchers') {
+      fetchMyVouchers();
+    }
   }, [isLoggedIn, activeTab]);
+
+  const fetchMyVouchers = async () => {
+    setVouchersLoading(true);
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/coupons/my-vouchers`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMyVouchers(data.vouchers || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setVouchersLoading(false);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -687,6 +713,9 @@ export default function AccountPage() {
                         <button onClick={() => setActiveTab('loyalty')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'loyalty' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                           💎 Khách hàng thân thiết
                         </button>
+                        <button onClick={() => setActiveTab('vouchers')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'vouchers' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                          🎟️ Voucher của tôi
+                        </button>
                       </>
                     )}
                     <button onClick={() => setActiveTab('security')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'security' ? 'text-primary fw-bold' : 'text-secondary'}`}>
@@ -979,6 +1008,68 @@ export default function AccountPage() {
                               ))}
                             </tbody>
                           </table>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* 6. VOUCHERS TAB */}
+                  {activeTab === 'vouchers' && (
+                    <div>
+                      <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary d-flex align-items-center gap-2">
+                        🎟️ VOUCHER DÀNH RIÊNG CHO BẠN
+                      </h4>
+                      <p className="fs-7 text-secondary mb-4">
+                        Hạng tài khoản hiện tại: <strong className="text-warning text-uppercase">{user?.rank || 'SILVER'}</strong>. Các mã giảm giá đặc quyền sẽ tự động được mở khóa theo cấp bậc của bạn!
+                      </p>
+
+                      {vouchersLoading ? (
+                        <div className="text-center text-secondary py-5 fs-7">Đang tải danh sách voucher...</div>
+                      ) : myVouchers.length === 0 ? (
+                        <div className="text-center text-secondary py-5 fs-7 bg-black rounded border border-secondary">
+                          Hiện tại chưa có voucher nào khả dụng cho tài khoản của bạn.
+                        </div>
+                      ) : (
+                        <div className="row g-3">
+                          {myVouchers.map((v: any, i: number) => {
+                            const isExclusive = v.targetRank && v.targetRank !== 'ALL';
+                            const rankBadge = v.targetRank === 'GOLD' ? 'Đặc quyền Vàng' : v.targetRank === 'PLATINUM' ? 'Đặc quyền Bạch Kim' : 'Đặc quyền Bạc';
+                            return (
+                              <div key={i} className="col-md-6">
+                                <div className="p-3 bg-black rounded border border-secondary h-100 d-flex flex-column justify-content-between">
+                                  <div>
+                                    <div className="d-flex justify-content-between align-items-start mb-2">
+                                      <span className="fs-6 fw-bold text-white tracking-wider">{v.code}</span>
+                                      {isExclusive ? (
+                                        <span className="badge bg-warning text-dark fs-8">{rankBadge}</span>
+                                      ) : (
+                                        <span className="badge bg-secondary fs-8">Tất cả thành viên</span>
+                                      )}
+                                    </div>
+                                    <div className="text-primary fw-bold fs-6 mb-2">
+                                      {v.discountType === 'PERCENTAGE' ? `Giảm ${v.discountValue}%` : `Giảm ${new Intl.NumberFormat('vi-VN').format(v.discountValue)}đ`}
+                                    </div>
+                                    <div className="fs-8 text-secondary mb-3">
+                                      <div>• Đơn tối thiểu: <span className="text-white">{v.minOrderAmount > 0 ? `${new Intl.NumberFormat('vi-VN').format(v.minOrderAmount)}đ` : 'Không có'}</span></div>
+                                      <div>• Hạn sử dụng: <span className="text-white">{new Date(v.expiryDate).toLocaleDateString('vi-VN')}</span></div>
+                                    </div>
+                                  </div>
+                                  <div className="d-flex justify-content-end pt-2 border-top border-secondary">
+                                    <button 
+                                      onClick={() => {
+                                        navigator.clipboard.writeText(v.code);
+                                        setCopiedCode(v.code);
+                                        setTimeout(() => setCopiedCode(null), 2000);
+                                      }} 
+                                      className="btn btn-outline-primary btn-sm fs-8 px-3"
+                                    >
+                                      {copiedCode === v.code ? '✓ Đã sao chép' : 'Sao chép mã'}
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>

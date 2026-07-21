@@ -90,6 +90,7 @@ export default function AdminPage() {
   const [cpMaxUsage, setCpMaxUsage] = useState('');
   const [cpExpiry, setCpExpiry] = useState('');
   const [cpIsActive, setCpIsActive] = useState(true);
+  const [cpTargetRank, setCpTargetRank] = useState('ALL');
   const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
 
   // CSKH (Reviews & QnA) State
@@ -697,6 +698,7 @@ export default function AdminPage() {
           discountType: cpType,
           discountValue: cpValue,
           minOrderAmount: cpMinOrderAmount || 0,
+          targetRank: cpTargetRank || 'ALL',
           maxUsage: cpMaxUsage,
           expiryDate: cpExpiry,
           isActive: cpIsActive
@@ -719,6 +721,7 @@ export default function AdminPage() {
     setCpType(c.discountType);
     setCpValue(c.discountValue.toString());
     setCpMinOrderAmount(c.minOrderAmount ? c.minOrderAmount.toString() : '0');
+    setCpTargetRank(c.targetRank || 'ALL');
     setCpMaxUsage(c.maxUsage.toString());
     setCpExpiry(c.expiryDate ? new Date(c.expiryDate).toISOString().substring(0, 10) : '');
     setCpIsActive(c.isActive !== undefined ? c.isActive : true);
@@ -745,6 +748,7 @@ export default function AdminPage() {
     setCpType('PERCENTAGE');
     setCpValue('');
     setCpMinOrderAmount('');
+    setCpTargetRank('ALL');
     setCpMaxUsage('');
     setCpExpiry('');
     setCpIsActive(true);
@@ -1538,12 +1542,21 @@ export default function AdminPage() {
                           <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={cpMinOrderAmount} onChange={(e) => setCpMinOrderAmount(e.target.value)} placeholder="Ví dụ: 500000" />
                         </div>
                         <div className="col-md-2">
-                          <label className="form-label fs-8 text-secondary">Lượt dùng tối đa</label>
+                          <label className="form-label fs-8 text-secondary">Hạng áp dụng</label>
+                          <select className="form-select bg-dark border-secondary text-white fs-7" value={cpTargetRank} onChange={(e: any) => setCpTargetRank(e.target.value)}>
+                            <option value="ALL">Tất cả thành viên</option>
+                            <option value="SILVER">Bạc (Silver+)</option>
+                            <option value="GOLD">Vàng (Gold+)</option>
+                            <option value="PLATINUM">Bạch Kim (Platinum)</option>
+                          </select>
+                        </div>
+                        <div className="col-md-1">
+                          <label className="form-label fs-8 text-secondary">Lượt tối đa</label>
                           <input type="number" className="form-control bg-dark border-secondary text-white fs-7" required value={cpMaxUsage} onChange={(e) => setCpMaxUsage(e.target.value)} placeholder="100" />
                         </div>
-                        <div className="col-md-2">
-                          <label className="form-label fs-8 text-secondary">Hạn sử dụng</label>
-                          <input type="date" className="form-control bg-dark border-secondary text-white fs-7" required value={cpExpiry} onChange={(e) => setCpExpiry(e.target.value)} />
+                        <div className="col-md-1">
+                          <label className="form-label fs-8 text-secondary">Hạn dùng</label>
+                          <input type="date" className="form-control bg-dark border-secondary text-white fs-7 px-1" required value={cpExpiry} onChange={(e) => setCpExpiry(e.target.value)} />
                         </div>
                       </div>
                       <div className="d-flex align-items-center justify-content-between mt-3 pt-2 border-top border-secondary">
@@ -1565,6 +1578,7 @@ export default function AdminPage() {
                             <th>Loại</th>
                             <th>Giá trị giảm</th>
                             <th>Đơn tối thiểu</th>
+                            <th>Hạng áp dụng</th>
                             <th>Đã dùng / Tối đa</th>
                             <th>Hết hạn</th>
                             <th>Trạng thái</th>
@@ -1574,7 +1588,7 @@ export default function AdminPage() {
                         <tbody>
                           {coupons.length === 0 ? (
                             <tr>
-                              <td colSpan={8} className="text-center text-secondary py-4">Chưa có mã giảm giá nào.</td>
+                              <td colSpan={9} className="text-center text-secondary py-4">Chưa có mã giảm giá nào.</td>
                             </tr>
                           ) : (
                             coupons.map((c, i) => (
@@ -1586,6 +1600,17 @@ export default function AdminPage() {
                                 </td>
                                 <td className="text-warning">
                                   {c.minOrderAmount > 0 ? `${new Intl.NumberFormat('vi-VN').format(c.minOrderAmount)}đ` : 'Không yêu cầu'}
+                                </td>
+                                <td>
+                                  {c.targetRank === 'GOLD' ? (
+                                    <span className="badge bg-warning text-dark">Vàng+</span>
+                                  ) : c.targetRank === 'PLATINUM' ? (
+                                    <span className="badge bg-info text-dark">Bạch Kim</span>
+                                  ) : c.targetRank === 'SILVER' ? (
+                                    <span className="badge bg-light text-dark">Bạc+</span>
+                                  ) : (
+                                    <span className="text-secondary">Tất cả</span>
+                                  )}
                                 </td>
                                 <td>{c.usedCount} / {c.maxUsage}</td>
                                 <td>{new Date(c.expiryDate).toLocaleDateString('vi-VN')}</td>

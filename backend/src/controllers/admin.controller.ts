@@ -59,18 +59,29 @@ export class AdminController {
     const updateData = req.body;
 
     try {
-      // Calculate slug if name is updated
-      if (updateData.name) {
-        updateData.slug = updateData.name.toLowerCase()
-          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-');
+      const existing = await prisma.product.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Không tìm thấy sản phẩm.' });
+
+      let newName = updateData.name || existing.name;
+      const newStock = updateData.stock !== undefined ? parseInt(updateData.stock) : existing.stock;
+
+      if (newStock > 0) {
+        newName = newName.replace(/\s*\(Hết hàng\)/gi, '').trim();
+        if (!updateData.status || updateData.status === 'OUT_OF_STOCK') {
+          updateData.status = 'NORMAL';
+        }
       }
+
+      updateData.name = newName;
+      updateData.stock = newStock;
+      updateData.slug = newName.toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
 
       if (updateData.originalPrice) updateData.originalPrice = parseFloat(updateData.originalPrice);
       if (updateData.salePrice) updateData.salePrice = parseFloat(updateData.salePrice);
-      if (updateData.stock !== undefined) updateData.stock = parseInt(updateData.stock);
 
       const product = await prisma.product.update({
         where: { id },
@@ -298,7 +309,7 @@ export class AdminController {
    * Tạo mã giảm giá mới
    */
   public static async createCoupon(req: Request, res: Response) {
-    const { code, discountType, discountValue, minOrderAmount, maxUsage, expiryDate, isActive } = req.body;
+    const { code, discountType, discountValue, minOrderAmount, targetRank, maxUsage, expiryDate, isActive } = req.body;
 
     if (!code || !discountType || discountValue === undefined || !expiryDate) {
       return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin mã giảm giá.' });
@@ -311,6 +322,7 @@ export class AdminController {
           discountType,
           discountValue: parseFloat(discountValue),
           minOrderAmount: minOrderAmount ? parseFloat(minOrderAmount) : 0,
+          targetRank: targetRank || 'ALL',
           maxUsage: parseInt(maxUsage || 1),
           expiryDate: new Date(expiryDate),
           isActive: isActive !== undefined ? Boolean(isActive) : true
@@ -356,7 +368,7 @@ export class AdminController {
    */
   public static async updateCoupon(req: Request, res: Response) {
     const { id } = req.params;
-    const { code, discountType, discountValue, minOrderAmount, maxUsage, expiryDate, isActive } = req.body;
+    const { code, discountType, discountValue, minOrderAmount, targetRank, maxUsage, expiryDate, isActive } = req.body;
 
     if (!code || !discountType || discountValue === undefined || !expiryDate) {
       return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin mã giảm giá.' });
@@ -370,6 +382,7 @@ export class AdminController {
           discountType,
           discountValue: parseFloat(discountValue),
           minOrderAmount: minOrderAmount !== undefined ? parseFloat(minOrderAmount) : 0,
+          targetRank: targetRank || 'ALL',
           maxUsage: parseInt(maxUsage || 1),
           expiryDate: new Date(expiryDate),
           isActive: isActive !== undefined ? Boolean(isActive) : true

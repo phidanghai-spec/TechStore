@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { isRankEligible } from './coupon.controller';
 import prisma from '../services/prisma.service';
 import { MailService } from '../services/mail.service';
 import { AuthenticatedRequest } from '../middleware/auth.middleware';
@@ -18,70 +19,56 @@ export class OrderController {
       couponCode
     } = req.body;
 
-    const userId = req.user?.id || null;
+    const userId = req.user?.id;
 
-    if (!customerName || !customerPhone || !customerEmail || !customerAddress || !paymentMethod || !items || !items.length) {
-      return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin giao hàng và giỏ hàng.' });
+    if (!customerName || !customerPhone || !customerEmail || !customerAddress || !paymentMethod || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin nhận hàng và sản phẩm.' });
     }
 
     try {
-      // 1. Validate products and calculate prices
-      const productIds = items.map((item: any) => item.productId).filter(Boolean);
+      // Fetch products to verify price & stock
+      const productIds = items.map((i: any) => i.productId);
       const dbProducts = await prisma.product.findMany({
         where: { id: { in: productIds } }
       });
 
-      if (dbProducts.length !== items.length) {
-        // Find missing products
-        const foundIds = new Set(dbProducts.map(p => p.id));
-        const missingItems = items.filter((item: any) => !foundIds.has(item.productId));
-        return res.status(400).json({ 
-          message: `Giỏ hàng chứa sản phẩm không còn tồn tại trên hệ thống. Vui lòng xóa giỏ hàng và chọn lại sản phẩm.` 
+      // Calculate total amount & verify stock
+      let totalAmount = 0;
+      const orderItemsData: any[] = [];
+
+      for (const item of items) {
+        const p = dbProducts.find(prod => prod.id === item.productId);
+        if (!p) {
+          return res.status(400).json({ message: `Sản phẩm ID ${item.productId} không tồn tại.` });
+        }
+        if (p.stock < item.quantity) {
+          return res.status(400).json({ message: `Sản phẩm "${p.name}" không đủ số lượng trong kho (chỉ còn ${p.stock}).` });
+        }
+
+        const itemPrice = p.salePrice || p.originalPrice;
+        totalAmount += itemPrice * item.quantity;
+        orderItemsData.push({
+          productId: p.id,
+          quantity: item.quantity,
+          price: itemPrice,
+          productName: p.name
         });
       }
 
-      // Check stock limit for all items
-      for (const item of items) {
-        const product = dbProducts.find(p => p.id === item.productId);
-        if (!product) continue;
-        if (product.stock < item.quantity) {
-          return res.status(400).json({ 
-            message: `Sản phẩm "${product.name}" không đủ hàng trong kho. Hiện tại còn ${product.stock} sản phẩm.` 
-          });
-        }
-      }
-
-      // Calculate total original amount
-      let totalAmount = 0;
-      const orderItemsData = items.map((item: any) => {
-        const product = dbProducts.find(p => p.id === item.productId)!;
-        const discountPercent = product.originalPrice > product.salePrice 
-          ? Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100) 
-          : 0;
-        const discountAmount = Math.round(product.originalPrice * (discountPercent / 100));
-        const itemPrice = discountPercent > 0 ? product.originalPrice - discountAmount : product.salePrice;
-        
-        totalAmount += itemPrice * item.quantity;
-        return {
-          productId: product.id,
-          quantity: item.quantity,
-          price: itemPrice,
-          productName: product.name // needed for email
-        };
-      });
-
-      // 2. Calculate Rank-based Discount and Validate Coupon if provided
+      // Tier discount
       let discountAmount = 0;
-      
+      let currentUserRank = 'SILVER';
+
       if (userId) {
-        const user = await prisma.user.findUnique({
+        const currentUser = await prisma.user.findUnique({
           where: { id: userId },
           select: { rank: true }
         });
-        if (user) {
-          if (user.rank === 'GOLD') {
+        if (currentUser) {
+          currentUserRank = currentUser.rank || 'SILVER';
+          if (currentUser.rank === 'GOLD') {
             discountAmount = totalAmount * 0.02;
-          } else if (user.rank === 'PLATINUM') {
+          } else if (currentUser.rank === 'PLATINUM') {
             discountAmount = totalAmount * 0.05;
           }
         }
@@ -113,6 +100,13 @@ export class OrderController {
         if (coupon.minOrderAmount > 0 && totalAmount < coupon.minOrderAmount) {
           const formattedMin = new Intl.NumberFormat('vi-VN').format(coupon.minOrderAmount);
           return res.status(400).json({ message: `Đơn hàng phải từ ${formattedMin}đ trở lên mới áp dụng được mã giảm giá này.` });
+        }
+
+        if (coupon.targetRank && coupon.targetRank !== 'ALL') {
+          if (!isRankEligible(currentUserRank, coupon.targetRank)) {
+            const rankText = coupon.targetRank === 'GOLD' ? 'Vàng' : coupon.targetRank === 'PLATINUM' ? 'Bạch Kim' : 'Bạc';
+            return res.status(400).json({ message: `Mã giảm giá ${coupon.code} chỉ dành riêng cho thành viên hạng ${rankText} trở lên. Hạng của bạn là ${currentUserRank}.` });
+          }
         }
 
         // Calculate coupon discount

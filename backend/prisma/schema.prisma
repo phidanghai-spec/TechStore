@@ -154,6 +154,7 @@ model Coupon {
   discountType   DiscountType
   discountValue  Float
   minOrderAmount Float        @default(0)
+  targetRank     String       @default("ALL")
   isActive       Boolean      @default(true)
   maxUsage       Int          @default(1)
   usedCount      Int          @default(0)

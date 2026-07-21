@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import compression from 'compression';
 import { SocketService } from './services/socket.service';
+import prisma from './services/prisma.service';
 
 // Load environment variables
 dotenv.config();
@@ -42,6 +43,38 @@ app.get('/', (req, res) => {
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Auto cleanup stale "(Hết hàng)" from product names when stock > 0
+(async () => {
+  try {
+    const products = await prisma.product.findMany({
+      where: {
+        name: { contains: '(Hết hàng)' }
+      }
+    });
+    for (const p of products) {
+      if (p.stock > 0) {
+        const cleanName = p.name.replace(/\s*\(Hết hàng\)/gi, '').trim();
+        const slug = cleanName.toLowerCase()
+          .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+        await prisma.product.update({
+          where: { id: p.id },
+          data: {
+            name: cleanName,
+            slug,
+            status: (p.status as any) === 'OUT_OF_STOCK' ? 'NORMAL' : p.status
+          }
+        });
+        console.log(`[Auto-Clean] Cleaned product name: ${p.name} -> ${cleanName}`);
+      }
+    }
+  } catch (err) {
+    console.error('[Auto-Clean] Error cleaning product names:', err);
+  }
+})();
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() });
