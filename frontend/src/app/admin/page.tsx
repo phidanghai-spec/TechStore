@@ -104,10 +104,10 @@ export default function AdminPage() {
   const socketRef = useRef<Socket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Verify Admin role on mount
+  // Xác thực quyền Admin khi mở trang Quản trị
   useEffect(() => {
-    const token = localStorage.getItem('admin_token');
-    const storedUser = localStorage.getItem('admin_user');
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
+    const storedUser = localStorage.getItem('admin_user') || localStorage.getItem('user');
 
     if (!token || !storedUser) {
       router.push('/account');
@@ -153,10 +153,13 @@ export default function AdminPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isCustomerTyping]);
 
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
-  });
+  const getHeaders = () => {
+    const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || '';
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`
+    };
+  };
 
   // ==========================================
   // API FETCH CALLS
