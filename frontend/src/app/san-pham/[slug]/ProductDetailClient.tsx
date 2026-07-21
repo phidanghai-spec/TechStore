@@ -14,19 +14,19 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
   const [quantity, setQuantity] = useState(1);
   const [user, setUser] = useState<any>(null);
 
-  // Calculate discount percentage
+  // Tính phần trăm giảm giá sản phẩm
   const discountPercent = product && product.originalPrice > product.salePrice 
     ? Math.round(((product.originalPrice - product.salePrice) / product.originalPrice) * 100) 
     : 0;
 
-  // Calculate mathematically consistent final price based on the percentage
+  // Tính số tiền được giảm và giá thanh toán cuối cùng
   const discountAmount = product ? Math.round(product.originalPrice * (discountPercent / 100)) : 0;
   const finalPrice = product ? (discountPercent > 0 ? product.originalPrice - discountAmount : product.salePrice) : 0;
 
-  // Validate product image
+  // Kiểm tra đường dẫn hình ảnh sản phẩm hợp lệ
   const displayImage = product ? validateProductImage(product.imageUrl, product) : '';
 
-  // Review Form state
+  // Khai báo state cho Form Đánh giá (Review)
   const [rating, setRating] = useState(5);
   const [reviewComment, setReviewComment] = useState('');
   const [reviewError, setReviewError] = useState('');
@@ -34,12 +34,12 @@ export default function ProductDetailClient({ initialProduct }: { initialProduct
   const [canReview, setCanReview] = useState(false);
   const [reviewReason, setReviewReason] = useState('');
 
-  // Q&A Form state
+  // Khai báo state cho Form Hỏi & Đáp (Q&A)
   const [questionText, setQuestionText] = useState('');
   const [qnaError, setQnaError] = useState('');
   const [qnaSuccess, setQnaSuccess] = useState('');
 
-  // Load user from localStorage
+  // Đọc thông tin người dùng đã đăng nhập từ localStorage
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
