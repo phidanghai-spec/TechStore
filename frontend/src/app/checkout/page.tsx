@@ -14,33 +14,33 @@ export default function CheckoutPage() {
   const [cartItems, setCartItems] = useState<any[]>([]);
   const [totalAmount, setTotalAmount] = useState(0);
 
-  // Form State
+  // Thông tin Form khách hàng
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MOMO' | 'PAYPAL'>('COD');
 
-  // Coupon State
+  // Trạng thái Mã giảm giá (Coupon)
   const [couponCode, setCouponCode] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
   const [discountAmount, setDiscountAmount] = useState(0);
   const [couponError, setCouponError] = useState('');
   const [couponSuccess, setCouponSuccess] = useState('');
 
-  // Submit Loading
+  // Trạng thái gửi đơn hàng & lỗi
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState('');
 
-  // Auth prompt modal
+  // Modal gợi ý đăng nhập dành cho khách vãng lai
   const [showAuthModal, setShowAuthModal] = useState(false);
 
-  // Membership Rank Discount
+  // Giảm giá theo Cấp độ thành viên (Member Rank)
   const [userRank, setUserRank] = useState<'SILVER' | 'GOLD' | 'PLATINUM' | null>(null);
   const [rankDiscount, setRankDiscount] = useState(0);
 
   useEffect(() => {
-    // 1. Load cart
+    // 1. Tải thông tin giỏ hàng từ localStorage
     const storedCart = localStorage.getItem('cart');
     if (storedCart) {
       try {

@@ -12,15 +12,15 @@ export default function Header() {
   const [cartCount, setCartCount] = useState(0);
   const [user, setUser] = useState<{ fullName: string; role: string } | null>(null);
 
-  // Search Autocomplete State
+  // Trạng thái tìm kiếm tự động gợi ý (Autocomplete)
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  // Load user and cart count on mount
+  // Khởi tạo thông tin người dùng và số lượng giỏ hàng khi component mount
   useEffect(() => {
     const checkAuthAndCart = () => {
-      // User Auth
+      // Xác thực thông tin người dùng từ localStorage
       const storedUser = localStorage.getItem('user');
       if (storedUser) {
         try {
@@ -32,7 +32,7 @@ export default function Header() {
         setUser(null);
       }
 
-      // Cart count
+      // Đếm tổng số lượng sản phẩm trong giỏ hàng
       const storedCart = localStorage.getItem('cart');
       if (storedCart) {
         try {
@@ -49,7 +49,7 @@ export default function Header() {
 
     checkAuthAndCart();
 
-    // Listen to storage changes and custom cart events
+    // Lắng nghe sự thay đổi của bộ nhớ trình duyệt và các sự kiện giỏ hàng / đăng nhập
     window.addEventListener('storage', checkAuthAndCart);
     window.addEventListener('cart-updated', checkAuthAndCart);
     window.addEventListener('user-logged-in', checkAuthAndCart);
@@ -61,7 +61,7 @@ export default function Header() {
     };
   }, []);
 
-  // Handle click outside to close suggestions
+  // Xử lý sự kiện click ra ngoài menu gợi ý để ẩn danh sách tìm kiếm
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
@@ -74,7 +74,7 @@ export default function Header() {
     };
   }, []);
 
-  // Fetch search suggestions with 300ms debounce
+  // Gọi API lấy gợi ý tìm kiếm sản phẩm với độ trễ (debounce) 300ms
   useEffect(() => {
     if (searchQuery.trim().length < 2) {
       setSuggestions([]);
@@ -91,7 +91,7 @@ export default function Header() {
           setShowSuggestions(true);
         }
       } catch (err) {
-        console.error('Error fetching suggestions:', err);
+        console.error('Lỗi khi tải gợi ý tìm kiếm:', err);
       }
     }, 300);
 

@@ -24,24 +24,25 @@ export default function ChatWidget() {
   const [isOpen, setIsOpen] = useState(false);
   const [chatMode, setChatMode] = useState<ChatMode>('ai');
 
-  // Shared
+  // Các trạng thái dùng chung
   const [user, setUser] = useState<any>(null);
   const [customerName, setCustomerName] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // AI Chat state
+  // Trạng thái Trò chuyện AI (Gemini AI)
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
 
-  // Admin Chat state
+  // Trạng thái Trò chuyện với Tư vấn viên (Admin)
   const [adminMessages, setAdminMessages] = useState<Message[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
   const [isAdminTyping, setIsAdminTyping] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // UUID thật từ server
   const socketRef = useRef<Socket | null>(null);
 
+  // Tự động cuộn xuống tin nhắn mới nhất
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -50,7 +51,7 @@ export default function ChatWidget() {
     scrollToBottom();
   }, [aiMessages, adminMessages, isAiLoading, isAdminTyping]);
 
-  // Load user data on mount
+  // Đọc thông tin người dùng từ localStorage khi component mount
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
@@ -66,7 +67,7 @@ export default function ChatWidget() {
     }
   }, []);
 
-  // Initialize admin socket when switching to admin mode
+  // Khởi tạo kết nối Socket khi chuyển sang chế độ Chat với Admin
   useEffect(() => {
     if (chatMode !== 'admin' || !isOpen || !isRegistered || !customerName) {
       if (socketRef.current) {
@@ -82,7 +83,7 @@ export default function ChatWidget() {
     const roomId = user?.id || customerEmail || 'guest_room';
     socket.emit('join_room', roomId);
 
-    // Fetch admin chat history
+    // Tải lịch sử trò chuyện với Admin từ server
     if (user) {
       fetch(`${BACKEND_URL}/api/chats/history`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
@@ -113,7 +114,7 @@ export default function ChatWidget() {
     };
   }, [chatMode, isOpen, isRegistered, customerName, user]);
 
-  // ─── AI CHAT HANDLER ────────────────────────────────────────────
+  // ─── XỬ LÝ GỬI TIN NHẮN CHO AI ────────────────────────────────────────────
   const handleAiSend = async (e: React.FormEvent) => {
     e.preventDefault();
     const text = inputMessage.trim();

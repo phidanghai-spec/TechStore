@@ -11,6 +11,7 @@ const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
 const formatCurrency = (n: number) =>
   new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(n);
 
+// Ánh xạ trạng thái đơn hàng sang nhãn tiếng Việt và màu sắc hiển thị
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
   PENDING:   { label: '⏳ Chờ duyệt',        color: 'warning' },
   APPROVED:  { label: '✅ Đã duyệt',          color: 'info' },
@@ -19,13 +20,25 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   CANCELLED: { label: '❌ Đã hủy',            color: 'danger' },
 };
 
+/**
+ * Trang Tra cứu đơn hàng công khai (Không cần đăng nhập)
+ * Khách hàng nhập Mã đơn hoặc Số điện thoại để tìm lịch sử đơn hàng
+ */
 export default function TraCuuDonHangPage() {
+  // Biến lưu từ khóa tìm kiếm (Mã đơn hoặc SĐT)
   const [query, setQuery] = useState('');
+  // Danh sách các đơn hàng tìm thấy
   const [orders, setOrders] = useState<any[]>([]);
+  // Trạng thái đang tải dữ liệu
   const [loading, setLoading] = useState(false);
+  // Trạng thái đã bấm tìm kiếm hay chưa
   const [searched, setSearched] = useState(false);
+  // Thông báo lỗi nếu có
   const [error, setError] = useState('');
 
+  /**
+   * Xử lý gọi API tra cứu đơn hàng từ backend
+   */
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -35,6 +48,7 @@ export default function TraCuuDonHangPage() {
     setSearched(true);
 
     try {
+      // Gọi API tra cứu công khai: GET /api/orders/track?query=...
       const res = await fetch(`${BACKEND_URL}/api/orders/track?query=${encodeURIComponent(query.trim())}`);
       if (!res.ok) throw new Error('Lỗi máy chủ');
       const data = await res.json();
