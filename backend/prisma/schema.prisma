@@ -149,14 +149,16 @@ model OrderItem {
 }
 
 model Coupon {
-  id            String       @id @default(uuid())
-  code          String       @unique
-  discountType  DiscountType
-  discountValue Float
-  maxUsage      Int          @default(1)
-  usedCount     Int          @default(0)
-  expiryDate    DateTime
-  createdAt     DateTime     @default(now())
+  id             String       @id @default(uuid())
+  code           String       @unique
+  discountType   DiscountType
+  discountValue  Float
+  minOrderAmount Float        @default(0)
+  isActive       Boolean      @default(true)
+  maxUsage       Int          @default(1)
+  usedCount      Int          @default(0)
+  expiryDate     DateTime
+  createdAt      DateTime     @default(now())
 }
 
 model StockMovement {

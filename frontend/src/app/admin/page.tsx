@@ -86,8 +86,11 @@ export default function AdminPage() {
   const [cpCode, setCpCode] = useState('');
   const [cpType, setCpType] = useState<'PERCENTAGE' | 'FIXED'>('PERCENTAGE');
   const [cpValue, setCpValue] = useState('');
+  const [cpMinOrderAmount, setCpMinOrderAmount] = useState('');
   const [cpMaxUsage, setCpMaxUsage] = useState('');
   const [cpExpiry, setCpExpiry] = useState('');
+  const [cpIsActive, setCpIsActive] = useState(true);
+  const [editingCouponId, setEditingCouponId] = useState<string | null>(null);
 
   // CSKH (Reviews & QnA) State
   const [reviews, setReviews] = useState<any[]>([]);
@@ -131,7 +134,7 @@ export default function AdminPage() {
   useEffect(() => {
     if (!isAdmin) return;
 
-    if (activeTab === 'dashboard') fetchStats();
+    if (activeTab === 'dashboard') { fetchStats(); fetchAdminOrders(); }
     if (activeTab === 'products') { fetchAdminProducts(); fetchCats(); }
     if (activeTab === 'orders') fetchAdminOrders();
     if (activeTab === 'users') fetchAdminUsers();
@@ -680,30 +683,71 @@ export default function AdminPage() {
   // ==========================================
   const handleCouponSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const url = editingCouponId
+      ? `${BACKEND_URL}/api/admin/coupons/${editingCouponId}`
+      : `${BACKEND_URL}/api/admin/coupons`;
+    const method = editingCouponId ? 'PUT' : 'POST';
+
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/coupons`, {
-        method: 'POST',
+      const res = await fetch(url, {
+        method,
         headers: getHeaders(),
         body: JSON.stringify({
           code: cpCode,
           discountType: cpType,
           discountValue: cpValue,
+          minOrderAmount: cpMinOrderAmount || 0,
           maxUsage: cpMaxUsage,
-          expiryDate: cpExpiry
+          expiryDate: cpExpiry,
+          isActive: cpIsActive
         })
       });
       const data = await res.json();
       if (res.ok) {
-        alert('Tạo mã giảm giá thành công!');
-        setCpCode('');
-        setCpValue('');
-        setCpMaxUsage('');
-        setCpExpiry('');
+        alert(editingCouponId ? 'Cập nhật mã giảm giá thành công!' : 'Tạo mã giảm giá thành công!');
+        clearCouponForm();
         fetchAdminCoupons();
       } else {
-        alert(data.message || 'Lỗi tạo mã giảm giá.');
+        alert(data.message || 'Lỗi xử lý mã giảm giá.');
       }
     } catch (err) { console.error(err); }
+  };
+
+  const handleEditCoupon = (c: any) => {
+    setEditingCouponId(c.id);
+    setCpCode(c.code);
+    setCpType(c.discountType);
+    setCpValue(c.discountValue.toString());
+    setCpMinOrderAmount(c.minOrderAmount ? c.minOrderAmount.toString() : '0');
+    setCpMaxUsage(c.maxUsage.toString());
+    setCpExpiry(c.expiryDate ? new Date(c.expiryDate).toISOString().substring(0, 10) : '');
+    setCpIsActive(c.isActive !== undefined ? c.isActive : true);
+  };
+
+  const handleToggleCoupon = async (id: string) => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/coupons/${id}/toggle`, {
+        method: 'PUT',
+        headers: getHeaders()
+      });
+      const data = await res.json();
+      if (res.ok) {
+        fetchAdminCoupons();
+      } else {
+        alert(data.message || 'Lỗi đổi trạng thái.');
+      }
+    } catch (err) { console.error(err); }
+  };
+
+  const clearCouponForm = () => {
+    setEditingCouponId(null);
+    setCpCode('');
+    setCpType('PERCENTAGE');
+    setCpValue('');
+    setCpMinOrderAmount('');
+    setCpMaxUsage('');
+    setCpExpiry('');
+    setCpIsActive(true);
   };
 
   const handleDeleteCoupon = async (id: string) => {
@@ -1005,10 +1049,13 @@ export default function AdminPage() {
                             { key: 'DELIVERED', label: '📦 Đơn đã giao thành công', color: 'success' },
                           ].map(({ key, label, color }) => {
                             const filtered = orders.filter(o => o.orderStatus === key);
+                            const statusTotalMoney = filtered.reduce((sum: number, o: any) => sum + (o.totalAmount || 0), 0);
+                            const formattedMoney = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(statusTotalMoney);
                             return (
                               <div key={key} className="col-lg-4">
                                 <div className="bg-black p-3 rounded border border-secondary h-100">
-                                  <h6 className={`text-${color} mb-3 fs-7 fw-bold`}>{label} ({filtered.length})</h6>
+                                  <h6 className={`text-${color} mb-1 fs-7 fw-bold`}>{label} ({filtered.length} đơn)</h6>
+                                  <div className="text-white fw-bold mb-3 fs-8">Tổng tiền: <span className={`text-${color}`}>{formattedMoney}</span></div>
                                   {filtered.length === 0 ? (
                                     <p className="text-secondary fs-8 text-center py-3">Không có đơn nào</p>
                                   ) : (
@@ -1460,34 +1507,54 @@ export default function AdminPage() {
                   <div>
                     <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Mã khuyến mãi (Vouchers)</h4>
                     
-                    {/* Add Coupon Form */}
+                    {/* Add / Edit Coupon Form */}
                     <form onSubmit={handleCouponSubmit} className="mb-4 bg-black p-3 rounded border border-secondary">
-                      <div className="row">
-                        <div className="col-md-3 mb-3">
+                      <div className="d-flex justify-content-between align-items-center mb-3">
+                        <h6 className="text-white fs-7 m-0 fw-bold">
+                          {editingCouponId ? '✏️ Chỉnh sửa mã giảm giá' : '➕ Tạo mã giảm giá mới'}
+                        </h6>
+                        {editingCouponId && (
+                          <button type="button" onClick={clearCouponForm} className="btn btn-outline-secondary btn-sm">Hủy chỉnh sửa</button>
+                        )}
+                      </div>
+                      <div className="row g-3">
+                        <div className="col-md-2">
                           <label className="form-label fs-8 text-secondary">Mã giảm giá</label>
-                          <input type="text" className="form-control bg-dark border-secondary text-white fs-7 uppercase" required value={cpCode} onChange={(e) => setCpCode(e.target.value)} placeholder="SALE10" />
+                          <input type="text" className="form-control bg-dark border-secondary text-white fs-7 text-uppercase" required value={cpCode} onChange={(e) => setCpCode(e.target.value)} placeholder="SALE10" />
                         </div>
-                        <div className="col-md-3 mb-3">
+                        <div className="col-md-2">
                           <label className="form-label fs-8 text-secondary">Loại giảm</label>
                           <select className="form-select bg-dark border-secondary text-white fs-7" value={cpType} onChange={(e: any) => setCpType(e.target.value)}>
                             <option value="PERCENTAGE">% Giảm</option>
                             <option value="FIXED">Số tiền cố định (VNĐ)</option>
                           </select>
                         </div>
-                        <div className="col-md-2 mb-3">
+                        <div className="col-md-2">
                           <label className="form-label fs-8 text-secondary">Giá trị giảm</label>
-                          <input type="number" className="form-control bg-dark border-secondary text-white fs-7" required value={cpValue} onChange={(e) => setCpValue(e.target.value)} />
+                          <input type="number" className="form-control bg-dark border-secondary text-white fs-7" required value={cpValue} onChange={(e) => setCpValue(e.target.value)} placeholder="10" />
                         </div>
-                        <div className="col-md-2 mb-3">
+                        <div className="col-md-2">
+                          <label className="form-label fs-8 text-secondary">Đơn tối thiểu (VNĐ)</label>
+                          <input type="number" className="form-control bg-dark border-secondary text-white fs-7" value={cpMinOrderAmount} onChange={(e) => setCpMinOrderAmount(e.target.value)} placeholder="Ví dụ: 500000" />
+                        </div>
+                        <div className="col-md-2">
                           <label className="form-label fs-8 text-secondary">Lượt dùng tối đa</label>
-                          <input type="number" className="form-control bg-dark border-secondary text-white fs-7" required value={cpMaxUsage} onChange={(e) => setCpMaxUsage(e.target.value)} />
+                          <input type="number" className="form-control bg-dark border-secondary text-white fs-7" required value={cpMaxUsage} onChange={(e) => setCpMaxUsage(e.target.value)} placeholder="100" />
                         </div>
-                        <div className="col-md-2 mb-3">
+                        <div className="col-md-2">
                           <label className="form-label fs-8 text-secondary">Hạn sử dụng</label>
                           <input type="date" className="form-control bg-dark border-secondary text-white fs-7" required value={cpExpiry} onChange={(e) => setCpExpiry(e.target.value)} />
                         </div>
                       </div>
-                      <button type="submit" className="btn btn-primary btn-sm px-4">Tạo mã giảm giá</button>
+                      <div className="d-flex align-items-center justify-content-between mt-3 pt-2 border-top border-secondary">
+                        <div className="form-check form-switch m-0">
+                          <input className="form-check-input" type="checkbox" id="cpActiveSwitch" checked={cpIsActive} onChange={(e) => setCpIsActive(e.target.checked)} />
+                          <label className="form-check-label fs-8 text-white" htmlFor="cpActiveSwitch">Kích hoạt mã để áp dụng cho đơn hàng</label>
+                        </div>
+                        <button type="submit" className="btn btn-primary btn-sm px-4">
+                          {editingCouponId ? 'Cập nhật mã giảm giá' : 'Tạo mã giảm giá'}
+                        </button>
+                      </div>
                     </form>
 
                     <div className="table-responsive rounded border border-secondary bg-black">
@@ -1497,28 +1564,48 @@ export default function AdminPage() {
                             <th className="ps-3">Mã giảm</th>
                             <th>Loại</th>
                             <th>Giá trị giảm</th>
-                            <th>Đã dùng</th>
-                            <th>Lượt dùng tối đa</th>
+                            <th>Đơn tối thiểu</th>
+                            <th>Đã dùng / Tối đa</th>
                             <th>Hết hạn</th>
-                            <th className="text-center">Xóa</th>
+                            <th>Trạng thái</th>
+                            <th className="text-center">Hành động</th>
                           </tr>
                         </thead>
                         <tbody>
-                          {coupons.map((c, i) => (
-                            <tr key={i}>
-                              <td className="ps-3 fw-bold text-white">{c.code}</td>
-                              <td>{c.discountType === 'PERCENTAGE' ? '% Giảm' : 'Tiền cố định'}</td>
-                              <td className="text-primary fw-bold">
-                                {c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(c.discountValue)}đ`}
-                              </td>
-                              <td>{c.usedCount}</td>
-                              <td>{c.maxUsage}</td>
-                              <td>{new Date(c.expiryDate).toLocaleDateString('vi-VN')}</td>
-                              <td className="text-center">
-                                <button onClick={() => handleDeleteCoupon(c.id)} className="btn btn-link text-danger btn-sm p-0">Xóa</button>
-                              </td>
+                          {coupons.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="text-center text-secondary py-4">Chưa có mã giảm giá nào.</td>
                             </tr>
-                          ))}
+                          ) : (
+                            coupons.map((c, i) => (
+                              <tr key={i}>
+                                <td className="ps-3 fw-bold text-white">{c.code}</td>
+                                <td>{c.discountType === 'PERCENTAGE' ? '% Giảm' : 'Tiền cố định'}</td>
+                                <td className="text-primary fw-bold">
+                                  {c.discountType === 'PERCENTAGE' ? `${c.discountValue}%` : `${new Intl.NumberFormat('vi-VN').format(c.discountValue)}đ`}
+                                </td>
+                                <td className="text-warning">
+                                  {c.minOrderAmount > 0 ? `${new Intl.NumberFormat('vi-VN').format(c.minOrderAmount)}đ` : 'Không yêu cầu'}
+                                </td>
+                                <td>{c.usedCount} / {c.maxUsage}</td>
+                                <td>{new Date(c.expiryDate).toLocaleDateString('vi-VN')}</td>
+                                <td>
+                                  {c.isActive ? (
+                                    <span className="badge bg-success">Đang áp dụng</span>
+                                  ) : (
+                                    <span className="badge bg-secondary">Tạm dừng</span>
+                                  )}
+                                </td>
+                                <td className="text-center">
+                                  <button onClick={() => handleEditCoupon(c)} className="btn btn-link text-primary btn-sm p-0 me-2">Sửa</button>
+                                  <button onClick={() => handleToggleCoupon(c.id)} className={`btn btn-link btn-sm p-0 me-2 ${c.isActive ? 'text-warning' : 'text-success'}`}>
+                                    {c.isActive ? 'Tắt' : 'Bật'}
+                                  </button>
+                                  <button onClick={() => handleDeleteCoupon(c.id)} className="btn btn-link text-danger btn-sm p-0">Xóa</button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
                         </tbody>
                       </table>
                     </div>

@@ -98,12 +98,21 @@ export class OrderController {
           return res.status(400).json({ message: 'Mã giảm giá không hợp lệ.' });
         }
 
+        if (!coupon.isActive) {
+          return res.status(400).json({ message: 'Mã giảm giá này hiện đang bị tạm dừng áp dụng.' });
+        }
+
         if (new Date() > coupon.expiryDate) {
           return res.status(400).json({ message: 'Mã giảm giá đã hết hạn sử dụng.' });
         }
 
         if (coupon.usedCount >= coupon.maxUsage) {
           return res.status(400).json({ message: 'Mã giảm giá đã hết số lần sử dụng.' });
+        }
+
+        if (coupon.minOrderAmount > 0 && totalAmount < coupon.minOrderAmount) {
+          const formattedMin = new Intl.NumberFormat('vi-VN').format(coupon.minOrderAmount);
+          return res.status(400).json({ message: `Đơn hàng phải từ ${formattedMin}đ trở lên mới áp dụng được mã giảm giá này.` });
         }
 
         // Calculate coupon discount

@@ -30,6 +30,7 @@ router.put('/warranties/:id', WarrantyController.updateWarrantyStatus);
 router.get('/coupons', AdminController.getAllCoupons);
 router.post('/coupons', AdminController.createCoupon);
 router.put('/coupons/:id', AdminController.updateCoupon);
+router.put('/coupons/:id/toggle', AdminController.toggleCoupon);
 router.delete('/coupons/:id', AdminController.deleteCoupon);
 
 // Q&A and Review Moderation

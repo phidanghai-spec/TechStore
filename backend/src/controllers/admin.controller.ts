@@ -298,7 +298,7 @@ export class AdminController {
    * Tạo mã giảm giá mới
    */
   public static async createCoupon(req: Request, res: Response) {
-    const { code, discountType, discountValue, maxUsage, expiryDate } = req.body;
+    const { code, discountType, discountValue, minOrderAmount, maxUsage, expiryDate, isActive } = req.body;
 
     if (!code || !discountType || discountValue === undefined || !expiryDate) {
       return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin mã giảm giá.' });
@@ -310,8 +310,10 @@ export class AdminController {
           code: code.toUpperCase(),
           discountType,
           discountValue: parseFloat(discountValue),
+          minOrderAmount: minOrderAmount ? parseFloat(minOrderAmount) : 0,
           maxUsage: parseInt(maxUsage || 1),
-          expiryDate: new Date(expiryDate)
+          expiryDate: new Date(expiryDate),
+          isActive: isActive !== undefined ? Boolean(isActive) : true
         }
       });
       return res.status(201).json({ message: 'Tạo mã giảm giá thành công.', coupon });
@@ -354,7 +356,7 @@ export class AdminController {
    */
   public static async updateCoupon(req: Request, res: Response) {
     const { id } = req.params;
-    const { code, discountType, discountValue, maxUsage, expiryDate } = req.body;
+    const { code, discountType, discountValue, minOrderAmount, maxUsage, expiryDate, isActive } = req.body;
 
     if (!code || !discountType || discountValue === undefined || !expiryDate) {
       return res.status(400).json({ message: 'Vui lòng cung cấp đầy đủ thông tin mã giảm giá.' });
@@ -367,8 +369,10 @@ export class AdminController {
           code: code.toUpperCase(),
           discountType,
           discountValue: parseFloat(discountValue),
+          minOrderAmount: minOrderAmount !== undefined ? parseFloat(minOrderAmount) : 0,
           maxUsage: parseInt(maxUsage || 1),
-          expiryDate: new Date(expiryDate)
+          expiryDate: new Date(expiryDate),
+          isActive: isActive !== undefined ? Boolean(isActive) : true
         }
       });
       return res.status(200).json({ message: 'Cập nhật mã giảm giá thành công.', coupon });
@@ -378,6 +382,25 @@ export class AdminController {
         return res.status(400).json({ message: 'Mã giảm giá này đã tồn tại.' });
       }
       return res.status(500).json({ message: 'Lỗi hệ thống khi cập nhật mã giảm giá.' });
+    }
+  }
+
+  /**
+   * Bật / Tắt kích hoạt mã giảm giá
+   */
+  public static async toggleCoupon(req: Request, res: Response) {
+    const { id } = req.params;
+    try {
+      const existing = await prisma.coupon.findUnique({ where: { id } });
+      if (!existing) return res.status(404).json({ message: 'Không tìm thấy mã giảm giá.' });
+
+      const coupon = await prisma.coupon.update({
+        where: { id },
+        data: { isActive: !existing.isActive }
+      });
+      return res.status(200).json({ message: `Đã ${coupon.isActive ? 'kích hoạt' : 'tạm dừng'} mã giảm giá ${coupon.code}.`, coupon });
+    } catch (error) {
+      return res.status(500).json({ message: 'Không thể thay đổi trạng thái mã giảm giá.' });
     }
   }
 
