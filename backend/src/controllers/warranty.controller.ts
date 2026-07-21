@@ -16,8 +16,10 @@ export class WarrantyController {
       const warranties = await prisma.warranty.findMany({
         where: {
           OR: [
-            { warrantyCode: query as string },
-            { customerPhone: query as string }
+            { warrantyCode: { contains: query as string } },
+            { customerPhone: { contains: query as string } },
+            { orderId: { contains: query as string } },
+            { productId: { contains: query as string } }
           ]
         },
         include: {

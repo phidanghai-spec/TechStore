@@ -1539,6 +1539,144 @@ export default function AdminPage() {
                   </div>
                 )}
 
+                {/* ── WARRANTY MANAGEMENT TAB ── */}
+                {activeTab === 'warranties' && (
+                  <div>
+                    <div className="d-flex justify-content-between align-items-center mb-4">
+                      <h5 className="text-uppercase m-0 text-white border-start border-primary border-4 ps-3">Quản lý Bảo hành Điện tử</h5>
+                    </div>
+
+                    {/* Filter bar */}
+                    <div className="bg-dark p-3 rounded border border-secondary mb-4">
+                      <div className="row g-2 align-items-center">
+                        <div className="col-md-5">
+                          <input 
+                            type="text" 
+                            className="form-control form-control-sm bg-black border-secondary text-white" 
+                            placeholder="Tìm theo Mã BH, SĐT, Tên khách hàng..." 
+                            value={warrantyQueryFilter}
+                            onChange={(e) => setWarrantyQueryFilter(e.target.value)}
+                          />
+                        </div>
+                        <div className="col-md-4">
+                          <select 
+                            className="form-select form-select-sm bg-black border-secondary text-white"
+                            value={warrantyStatusFilter}
+                            onChange={(e) => setWarrantyStatusFilter(e.target.value)}
+                          >
+                            <option value="">-- Tất cả trạng thái --</option>
+                            <option value="ACTIVE">Đang hiệu lực (ACTIVE)</option>
+                            <option value="CLAIMED">Đang tiếp nhận/bảo hành (CLAIMED)</option>
+                            <option value="EXPIRED">Hết hạn (EXPIRED)</option>
+                          </select>
+                        </div>
+                        <div className="col-md-3">
+                          <button onClick={fetchAdminWarranties} className="btn btn-primary btn-sm w-100">
+                            🔍 Lọc dữ liệu
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Edit Form Modal */}
+                    {editingWarranty && (
+                      <div className="bg-dark p-4 rounded border border-primary mb-4">
+                        <h6 className="text-primary mb-3">✏️ Cập nhật bảo hành: <span className="text-white fw-bold">{editingWarranty.warrantyCode}</span></h6>
+                        <form onSubmit={handleUpdateWarrantySubmit}>
+                          <div className="row g-3 mb-3">
+                            <div className="col-md-6">
+                              <label className="form-label text-secondary fs-8 mb-1">Sản phẩm bảo hành</label>
+                              <input type="text" className="form-control form-control-sm bg-black border-secondary text-white" disabled value={editingWarranty.product?.name || ''} />
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label text-secondary fs-8 mb-1">Khách hàng / SĐT</label>
+                              <input type="text" className="form-control form-control-sm bg-black border-secondary text-white" disabled value={`${editingWarranty.customerName} (${editingWarranty.customerPhone})`} />
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label text-secondary fs-8 mb-1">Trạng thái bảo hành</label>
+                              <select className="form-select form-select-sm bg-black border-secondary text-white" value={wrtStatus} onChange={(e: any) => setWrtStatus(e.target.value)}>
+                                <option value="ACTIVE">ACTIVE - Đang hiệu lực</option>
+                                <option value="CLAIMED">CLAIMED - Đang bảo hành/sửa chữa</option>
+                                <option value="EXPIRED">EXPIRED - Hết hạn bảo hành</option>
+                              </select>
+                            </div>
+                            <div className="col-md-6">
+                              <label className="form-label text-secondary fs-8 mb-1">Ghi chú tình trạng / sửa chữa</label>
+                              <input type="text" className="form-control form-control-sm bg-black border-secondary text-white" value={wrtNotes} onChange={(e) => setWrtNotes(e.target.value)} placeholder="Nhập ghi chú sửa chữa, tình trạng máy..." />
+                            </div>
+                          </div>
+                          <div className="d-flex gap-2">
+                            <button type="submit" className="btn btn-success btn-sm px-4">Lưu cập nhật</button>
+                            <button type="button" className="btn btn-secondary btn-sm px-3" onClick={() => setEditingWarranty(null)}>Hủy</button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
+
+                    {/* Table */}
+                    <div className="table-responsive rounded border border-secondary bg-black">
+                      <table className="table table-dark table-hover align-middle m-0 fs-7">
+                        <thead>
+                          <tr>
+                            <th>Mã bảo hành</th>
+                            <th>Sản phẩm</th>
+                            <th>Khách hàng</th>
+                            <th>Thời hạn</th>
+                            <th>Trạng thái</th>
+                            <th>Ghi chú</th>
+                            <th className="text-end">Thao tác</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {warranties.length === 0 ? (
+                            <tr>
+                              <td colSpan={7} className="text-center text-secondary py-4">Chưa có dữ liệu bảo hành nào.</td>
+                            </tr>
+                          ) : (
+                            warranties.map((w) => (
+                              <tr key={w.id}>
+                                <td className="fw-bold text-primary">{w.warrantyCode}</td>
+                                <td>
+                                  <div className="d-flex align-items-center gap-2">
+                                    {w.product?.imageUrl && <img src={w.product.imageUrl} alt="" style={{ width: 32, height: 32, objectFit: 'contain' }} />}
+                                    <span>{w.product?.name}</span>
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="fw-bold">{w.customerName}</div>
+                                  <small className="text-secondary">{w.customerPhone}</small>
+                                </td>
+                                <td>
+                                  <div className="text-secondary fs-8">Kích hoạt: {formatDate(w.startDate)}</div>
+                                  <div className="text-danger fw-bold fs-8">Hết hạn: {formatDate(w.endDate)}</div>
+                                </td>
+                                <td>
+                                  {w.status === 'ACTIVE' && <span className="badge bg-success">Đang hiệu lực</span>}
+                                  {w.status === 'CLAIMED' && <span className="badge bg-warning text-black">Đang bảo hành</span>}
+                                  {w.status === 'EXPIRED' && <span className="badge bg-danger">Hết hạn</span>}
+                                </td>
+                                <td>{w.notes || '-'}</td>
+                                <td className="text-end">
+                                  <button 
+                                    className="btn btn-outline-info btn-xs"
+                                    onClick={() => {
+                                      setEditingWarranty(w);
+                                      setWrtStatus(w.status);
+                                      setWrtNotes(w.notes || '');
+                                    }}
+                                  >
+                                    ✏️ Sửa
+                                  </button>
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
               </div>
             </div>
 
