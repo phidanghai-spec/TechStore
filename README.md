@@ -172,14 +172,14 @@ Khởi chạy container MySQL cục bộ hoặc kết nối TiDB Cloud.
    - `JWT_SECRET`: Khóa bí mật JWT
    - `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USER`, `EMAIL_PASS`: SMTP Gmail
    - `FRONTEND_URL`: `https://frontend-ruby-phi-14.vercel.app`
-   - `RENDER_URL`: `https://techstore-backend-ftzs.onrender.com`
+   - `RENDER_URL`: `https://techstore-backend-l1zs.onrender.com`
 
 ### 3. Deploy Frontend lên Vercel
 1. Đăng ký tại [Vercel](https://vercel.com/).
 2. **Add New Project** → Connect GitHub → Root Directory: `frontend`
 3. Environment Variables:
-   - `NEXT_PUBLIC_API_URL`: `https://techstore-backend-ftzs.onrender.com`
-   - `NEXT_PUBLIC_SOCKET_URL`: `https://techstore-backend-ftzs.onrender.com`
+   - `NEXT_PUBLIC_API_URL`: `https://techstore-backend-l1zs.onrender.com`
+   - `NEXT_PUBLIC_SOCKET_URL`: `https://techstore-backend-l1zs.onrender.com`
    - `NEXT_PUBLIC_CLIENT_URL`: `https://frontend-ruby-phi-14.vercel.app`
 4. Click **Deploy**.
 

@@ -9,7 +9,7 @@ const MOMO_PARTNER_CODE = process.env.MOMO_PARTNER_CODE || 'MOMOBKUN20180529';
 const MOMO_ACCESS_KEY = process.env.MOMO_ACCESS_KEY || 'klm05TvNBzhg7h7j';
 const MOMO_SECRET_KEY = process.env.MOMO_SECRET_KEY || 'at67qH6mk8w5Y1nAyMoTKhpAoTkJbW17';
 const MOMO_ENDPOINT = process.env.MOMO_ENDPOINT || 'https://test-payment.momo.vn/v2/gateway/api/create';
-const MOMO_IPN_URL = process.env.MOMO_IPN_URL || 'https://techstore-backend-ftzs.onrender.com/api/payments/momo/ipn';
+const MOMO_IPN_URL = process.env.MOMO_IPN_URL || 'https://techstore-backend-l1zs.onrender.com/api/payments/momo/ipn';
 
 export interface MomoCreatePaymentResult {
   success: boolean;
