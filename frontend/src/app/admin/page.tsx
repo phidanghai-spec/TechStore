@@ -12,7 +12,7 @@ const RevenueChart = dynamic(() => import('../../components/RevenueChart'), {
   loading: () => <div className="text-center py-5 text-secondary">Đang tải biểu đồ doanh thu...</div>
 });
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://techstore-backend-l1zs.onrender.com';
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || BACKEND_URL;
 
 const formatDate = (dateStr: string) => {

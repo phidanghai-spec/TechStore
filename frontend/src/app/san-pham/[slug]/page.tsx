@@ -3,7 +3,7 @@ import ProductDetailClient from './ProductDetailClient';
 import Header from '../../../components/Header';
 import Footer from '../../../components/Footer';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://techstore-backend-l1zs.onrender.com';
 
 const MOCK_PRODUCTS = [
   { id: '1', name: 'iPhone 16 Pro Max 256GB', slug: 'iphone-16-pro-max-256gb', originalPrice: 34990000, salePrice: 33990000, stock: 12, status: 'HOT', imageUrl: 'https://images.unsplash.com/photo-1727371754854-47702de29202?w=800&auto=format&fit=crop&q=80', brand: 'Apple', avgRating: 5, ratingsCount: 28, category: { name: 'Điện thoại', slug: 'dien-thoai' }, description: '{"ram":"8 GB","storage":"256 GB","detail":"iPhone 16 Pro Max thiết kế titan sa mạc cực chất."}', reviews: [], qnas: [] },

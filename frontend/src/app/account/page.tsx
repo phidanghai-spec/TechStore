@@ -7,7 +7,7 @@ import Footer from '../../components/Footer';
 import dynamic from 'next/dynamic';
 const ChatWidget = dynamic(() => import('../../components/ChatWidget'), { ssr: false });
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://techstore-backend-l1zs.onrender.com';
 
 export default function AccountPage() {
   const router = useRouter();

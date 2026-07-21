@@ -9,7 +9,7 @@ const ChatWidget = dynamic(() => import('../components/ChatWidget'), { ssr: fals
 import ProductCard from '../components/ProductCard';
 
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://techstore-backend-l1zs.onrender.com';
 
 // Fallback Mock Data in case Backend API is down/offline
 const MOCK_PRODUCTS = [

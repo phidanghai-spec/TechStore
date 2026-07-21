@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const ChatWidget = dynamic(() => import('../../../components/ChatWidget'), { ssr: false });
 import { validateProductImage } from '../../../utils/image';
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || 'https://techstore-backend-l1zs.onrender.com';
 
 export default function ProductDetailClient({ initialProduct }: { initialProduct: any }) {
   const [product, setProduct] = useState<any>(initialProduct);
