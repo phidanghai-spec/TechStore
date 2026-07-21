@@ -103,6 +103,7 @@ model Product {
   reviews       ProductReview[]
   qnas          ProductQna[]
   warranties    Warranty[]
+  stockMovements StockMovement[]
 
   @@index([isVisible, status])
   @@index([brand])
@@ -111,24 +112,26 @@ model Product {
 }
 
 model Order {
-  id             String        @id @default(uuid())
-  userId         String?       // Nullable if guest checkout
-  user           User?         @relation(fields: [userId], references: [id])
-  customerName   String
-  customerPhone  String
-  customerEmail  String
+  id              String        @id @default(uuid())
+  userId          String?       // Nullable if guest checkout
+  user            User?         @relation(fields: [userId], references: [id])
+  customerName    String
+  customerPhone   String
+  customerEmail   String
   customerAddress String
-  paymentMethod  PaymentMethod @default(COD)
-  paymentStatus  PaymentStatus @default(PENDING)
-  orderStatus    OrderStatus   @default(PENDING)
-  totalAmount    Float
-  discountAmount Float         @default(0)
-  isDebt         Boolean       @default(false) // True if delivered but COD money not collected
-  deliveryStaff  String?       // Name or ID of delivery staff assigned
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
-  items          OrderItem[]
-  warranties     Warranty[]
+  paymentMethod   PaymentMethod @default(COD)
+  paymentStatus   PaymentStatus @default(PENDING)
+  orderStatus     OrderStatus   @default(PENDING)
+  totalAmount     Float
+  discountAmount  Float         @default(0)
+  deliveryStaff   String?       // Name or ID of delivery staff assigned
+  cancelReason    String?       // Lý do hủy đơn
+  cancelledBy     String?       // "CUSTOMER" hoặc userId admin
+  cancelledAt     DateTime?     // Thời điểm hủy
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  items           OrderItem[]
+  warranties      Warranty[]
 
   @@index([userId])
   @@index([orderStatus])
@@ -154,6 +157,20 @@ model Coupon {
   usedCount     Int          @default(0)
   expiryDate    DateTime
   createdAt     DateTime     @default(now())
+}
+
+model StockMovement {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  type      String   // "IMPORT" | "EXPORT" | "ADJUST"
+  quantity  Int
+  note      String?
+  createdBy String?  // userId của admin thực hiện
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+  @@index([createdAt])
 }
 
 model ProductReview {

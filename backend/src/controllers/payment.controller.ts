@@ -119,8 +119,37 @@ export class PaymentController {
           console.log(`MoMo IPN: Order ${order.id} marked as PAID`);
         }
       } else {
-        // Thanh toán thất bại — log lại
+        // Thanh toán thất bại — cập nhật trạng thái FAILED và hoàn lại tồn kho
         console.warn(`MoMo IPN: Payment failed for order ${realOrderId}, resultCode=${resultCode}`);
+        
+        const failedOrder = await prisma.order.findFirst({
+          where: {
+            OR: [
+              { id: realOrderId },
+              { id: { contains: realOrderId.substring(0, 8) } }
+            ]
+          },
+          include: { items: true }
+        });
+
+        if (failedOrder && failedOrder.paymentStatus !== 'FAILED') {
+          await prisma.$transaction(async (tx) => {
+            // Cập nhật trạng thái thanh toán thất bại
+            await tx.order.update({
+              where: { id: failedOrder.id },
+              data: { paymentStatus: 'FAILED', orderStatus: 'CANCELLED' }
+            });
+
+            // Hoàn lại tồn kho
+            for (const item of failedOrder.items) {
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { stock: { increment: item.quantity } }
+              });
+            }
+          });
+          console.log(`MoMo IPN: Order ${failedOrder.id} marked as FAILED, stock restored.`);
+        }
       }
 
       // Luôn trả 200 cho MoMo để họ không retry

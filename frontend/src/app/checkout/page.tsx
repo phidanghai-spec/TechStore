@@ -32,6 +32,9 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [orderError, setOrderError] = useState('');
 
+  // Auth prompt modal
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   // Membership Rank Discount
   const [userRank, setUserRank] = useState<'SILVER' | 'GOLD' | 'PLATINUM' | null>(null);
   const [rankDiscount, setRankDiscount] = useState(0);
@@ -69,6 +72,9 @@ export default function CheckoutPage() {
       } catch (e) {
         // ignore
       }
+    } else {
+      // Khách vãng lai — hiển thị modal nhắc đăng nhập (không chặn cứng)
+      setShowAuthModal(true);
     }
   }, []);
 
@@ -410,6 +416,37 @@ export default function CheckoutPage() {
         </div>
       </div>
       <ChatWidget />
+
+      {/* Modal nhắc đăng nhập cho khách vãng lai */}
+      {showAuthModal && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.75)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-dark border border-secondary text-white text-center p-2">
+              <div className="modal-header border-0 justify-content-end">
+                <button onClick={() => setShowAuthModal(false)} className="btn-close btn-close-white" />
+              </div>
+              <div className="modal-body py-2">
+                <div style={{ fontSize: '3rem' }}>🛒</div>
+                <h5 className="fw-bold mt-2 mb-1">Đăng nhập để mua hàng dễ dàng hơn!</h5>
+                <p className="text-secondary fs-7 mb-4">
+                  Đăng nhập để nhận <strong className="text-warning">ưu đãi thành viên</strong>, tích điểm thưởng
+                  và theo dõi đơn hàng nhanh chóng.
+                </p>
+                <div className="d-flex gap-2 justify-content-center">
+                  <a href="/account" className="btn btn-primary px-4 fw-bold">Đăng nhập</a>
+                  <a href="/account" className="btn btn-outline-light px-4">Đăng ký</a>
+                </div>
+              </div>
+              <div className="modal-footer border-0 justify-content-center">
+                <button onClick={() => setShowAuthModal(false)} className="btn btn-link text-secondary fs-8 text-decoration-none">
+                  Tiếp tục mua hàng với tư cách khách
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </>
   );

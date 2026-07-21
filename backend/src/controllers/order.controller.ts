@@ -131,7 +131,7 @@ export class OrderController {
             customerEmail,
             customerAddress,
             paymentMethod,
-            paymentStatus: paymentMethod === 'COD' ? 'PENDING' : 'PAID', // Online payments marked as PAID
+            paymentStatus: 'PENDING', // Luôn PENDING khi tạo đơn, kể cả MOMO — chỉ set PAID khi IPN xác nhận
             orderStatus: 'PENDING',
             totalAmount: finalAmount,
             discountAmount,
@@ -318,6 +318,7 @@ export class OrderController {
   public static async cancelOrder(req: AuthenticatedRequest, res: Response) {
     const { id } = req.params;
     const userId = req.user?.id;
+    const { reason } = req.body; // Lý do hủy đơn (tuỳ chọn)
 
     try {
       const order = await prisma.order.findUnique({
@@ -346,7 +347,10 @@ export class OrderController {
           where: { id },
           data: {
             orderStatus: 'CANCELLED',
-            paymentStatus: order.paymentStatus === 'PAID' && order.paymentMethod !== 'COD' ? 'PENDING' : order.paymentStatus // Refund pending if paid online
+            paymentStatus: order.paymentStatus === 'PAID' && order.paymentMethod !== 'COD' ? 'PENDING' : order.paymentStatus,
+            cancelReason: reason || null,
+            cancelledBy: 'CUSTOMER',
+            cancelledAt: new Date()
           }
         });
 

@@ -39,6 +39,7 @@ export default function ChatWidget() {
   const [adminMessages, setAdminMessages] = useState<Message[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
   const [isAdminTyping, setIsAdminTyping] = useState(false);
+  const [guestUserId, setGuestUserId] = useState<string | null>(null); // UUID thật từ server
   const socketRef = useRef<Socket | null>(null);
 
   const scrollToBottom = () => {
@@ -93,6 +94,11 @@ export default function ChatWidget() {
 
     socket.on('receive_message', (msg: any) => {
       setAdminMessages(prev => [...prev, msg]);
+    });
+
+    // Nhận UUID thật của guest user từ server
+    socket.on('guest_registered', (data: { userId: string }) => {
+      setGuestUserId(data.userId);
     });
 
     socket.on('typing_status', (data: { isTyping: boolean; senderName: string }) => {
@@ -311,7 +317,7 @@ export default function ChatWidget() {
                     <p className="text-secondary fs-8 text-center my-auto">👋 Chào {customerName}! Admin sẽ phản hồi sớm nhất có thể.</p>
                   )}
                   {adminMessages.map((msg, i) => {
-                    const isMe = msg.senderId === (user?.id || customerEmail);
+                    const isMe = msg.senderId === (user?.id || guestUserId);
                     return (
                       <div key={i} className={`d-flex flex-column ${isMe ? 'align-items-end' : 'align-items-start'}`}>
                         <span className="text-secondary mb-1" style={{ fontSize: '0.62rem' }}>

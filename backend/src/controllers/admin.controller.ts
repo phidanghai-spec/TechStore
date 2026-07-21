@@ -527,7 +527,7 @@ export class AdminController {
    */
   public static async updateOrderStatus(req: Request, res: Response) {
     const { id } = req.params;
-    const { orderStatus, deliveryStaff, paymentStatus } = req.body;
+    const { orderStatus, deliveryStaff, paymentStatus, cancelReason } = req.body;
 
     try {
       const order = await prisma.order.findUnique({
@@ -544,37 +544,24 @@ export class AdminController {
       if (deliveryStaff !== undefined) updateData.deliveryStaff = deliveryStaff;
       if (paymentStatus) updateData.paymentStatus = paymentStatus;
 
-      // Xử lý công nợ tự động: Nếu COD giao thành công mà chưa thu tiền -> isDebt = true
+      // Khi giao hàng thành công (DELIVERED): luôn set PAID
+      // Bỏ khái niệm ghi nợ/ký quỹ — COD giao xong = thu tiền = PAID
       if (orderStatus === 'DELIVERED') {
-        if (order.paymentMethod === 'COD' && order.paymentStatus === 'PENDING') {
-          // Bắt buộc: kiểm tra xem khách hàng có tiền ký quỹ hay không để được nợ tiền
-          if (!order.userId) {
-            return res.status(400).json({ message: 'Khách hàng vãng lai không được phép nợ tiền. Phải thu tiền khi giao hàng thành công.' });
-          }
-          
-          const user = await prisma.user.findUnique({
-            where: { id: order.userId }
-          });
-          
-          if (!user || user.deposit < order.totalAmount) {
-            const currentDeposit = user ? user.deposit : 0;
-            return res.status(400).json({ 
-              message: `Khách hàng không đủ tiền ký quỹ để được giao hàng chưa thu tiền (Cần ký quỹ: ${order.totalAmount.toLocaleString('vi-VN')}đ, Hiện có: ${currentDeposit.toLocaleString('vi-VN')}đ).` 
-            });
-          }
-          
-          updateData.isDebt = true; // Ghi nhận công nợ
-        } else {
-          updateData.paymentStatus = 'PAID';
-        }
+        updateData.paymentStatus = 'PAID';
       }
 
       // Xử lý hoàn kho tự động nếu bị hủy bởi Admin
       if (orderStatus === 'CANCELLED' && order.orderStatus !== 'CANCELLED') {
+        const adminUser = (req as any).user;
         await prisma.$transaction(async (tx) => {
           await tx.order.update({
             where: { id },
-            data: updateData
+            data: {
+              ...updateData,
+              cancelReason: cancelReason || null,
+              cancelledBy: adminUser?.id || 'ADMIN',
+              cancelledAt: new Date()
+            }
           });
 
           // Revert stock
@@ -641,26 +628,6 @@ export class AdminController {
     } catch (error) {
       console.error('Update order status error:', error);
       return res.status(500).json({ message: 'Không thể cập nhật trạng thái đơn hàng.' });
-    }
-  }
-
-  /**
-   * Thu tiền công nợ đơn giao thành công chưa thu tiền
-   */
-  public static async collectDebt(req: Request, res: Response) {
-    const { id } = req.params;
-
-    try {
-      const order = await prisma.order.update({
-        where: { id },
-        data: {
-          isDebt: false,
-          paymentStatus: 'PAID'
-        }
-      });
-      return res.status(200).json({ message: 'Thu tiền công nợ thành công, đơn hàng đã được cập nhật Đã thanh toán.', order });
-    } catch (error) {
-      return res.status(500).json({ message: 'Không thể thu công nợ.' });
     }
   }
 
@@ -751,6 +718,61 @@ export class AdminController {
     } catch (error) {
       console.error('Get statistics error:', error);
       return res.status(500).json({ message: 'Lỗi hệ thống khi tải báo cáo thống kê.' });
+    }
+  }
+
+  // ==========================================
+  // 2.7 NHẬP KHO
+  // ==========================================
+
+  /**
+   * Nhập kho sản phẩm — ghi StockMovement và tăng stock
+   * POST /api/admin/products/:id/stock-in
+   */
+  public static async stockIn(req: Request, res: Response) {
+    const { id } = req.params;
+    const { quantity, note } = req.body;
+    const adminUser = (req as any).user;
+
+    if (!quantity || isNaN(parseInt(quantity)) || parseInt(quantity) <= 0) {
+      return res.status(400).json({ message: 'Số lượng nhập kho phải là số nguyên dương.' });
+    }
+
+    try {
+      const qty = parseInt(quantity);
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Tăng tồn kho sản phẩm
+        const updatedProduct = await tx.product.update({
+          where: { id },
+          data: { stock: { increment: qty } }
+        });
+
+        // Ghi lịch sử nhập kho
+        const movement = await tx.stockMovement.create({
+          data: {
+            productId: id,
+            type: 'IMPORT',
+            quantity: qty,
+            note: note || null,
+            createdBy: adminUser?.id || null
+          }
+        });
+
+        return { product: updatedProduct, movement };
+      });
+
+      return res.status(200).json({
+        message: `Nhập kho thành công. Tồn kho hiện tại: ${result.product.stock} sản phẩm.`,
+        stock: result.product.stock,
+        movement: result.movement
+      });
+    } catch (error: any) {
+      console.error('Stock-in error:', error);
+      if (error.code === 'P2025') {
+        return res.status(404).json({ message: 'Không tìm thấy sản phẩm.' });
+      }
+      return res.status(500).json({ message: 'Lỗi hệ thống khi nhập kho.' });
     }
   }
 }

@@ -13,6 +13,7 @@ router.get('/products', AdminController.getAllProducts);
 router.post('/products', AdminController.createProduct);
 router.put('/products/:id', AdminController.updateProduct);
 router.delete('/products/:id', AdminController.deleteProduct);
+router.post('/products/:id/stock-in', AdminController.stockIn); // Nhập kho
 
 // User Management
 router.get('/users', AdminController.getAllUsers);
@@ -38,10 +39,9 @@ router.delete('/qnas/:id', AdminController.deleteQna);
 router.get('/reviews', AdminController.getReviews);
 router.put('/reviews/:id/toggle', AdminController.toggleReviewApproval);
 
-// Order Management & Debt Collecting
+// Order Management
 router.get('/orders', AdminController.getAllOrders);
 router.put('/orders/:id/status', AdminController.updateOrderStatus);
-router.put('/orders/:id/collect-debt', AdminController.collectDebt);
 
 // Stats
 router.get('/stats', AdminController.getStatistics);

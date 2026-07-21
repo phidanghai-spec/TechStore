@@ -87,6 +87,8 @@ export class SocketService {
               });
             }
             actualSenderId = guestUser.id;
+            // Emit UUID thật về cho client để dùng khi so sánh tin nhắn
+            socket.emit('guest_registered', { userId: guestUser.id });
           }
 
           // 3. Resolve Receiver ID if it is a guest email or doesn't exist

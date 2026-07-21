@@ -48,6 +48,10 @@ export default function AccountPage() {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
+  // Modal hủy đơn
+  const [cancelModal, setCancelModal] = useState<{ orderId: string; open: boolean }>({ orderId: '', open: false });
+  const [cancelReason, setCancelReason] = useState('');
+
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -168,6 +172,12 @@ export default function AccountPage() {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        // Lưu riêng phiên admin để có thể chạy song song với phiên khách hàng
+        // trên cùng trình duyệt (2 tab) mà không bị ghi đè lẫn nhau
+        if (data.user.role === 'ADMIN') {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', JSON.stringify(data.user));
+        }
         setUser(data.user);
         
         // Form preset
@@ -232,6 +242,10 @@ export default function AccountPage() {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.user.role === 'ADMIN') {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', JSON.stringify(data.user));
+        }
         setUser(data.user);
         setIsLoggedIn(true);
         window.dispatchEvent(new Event('user-logged-in'));
@@ -358,6 +372,10 @@ export default function AccountPage() {
       if (res.ok) {
         localStorage.setItem('token', data.token);
         localStorage.setItem('user', JSON.stringify(data.user));
+        if (data.user.role === 'ADMIN') {
+          localStorage.setItem('admin_token', data.token);
+          localStorage.setItem('admin_user', JSON.stringify(data.user));
+        }
         setUser(data.user);
         setFullName(data.user.fullName);
         setPhone(data.user.phone);
@@ -410,20 +428,25 @@ export default function AccountPage() {
   };
 
   const handleCancelOrder = async (orderId: string) => {
-    if (!confirm('Bạn chắc chắn muốn hủy đơn hàng này?')) return;
-    const token = localStorage.getItem('token');
+    setCancelModal({ orderId, open: true });
+    setCancelReason('');
+  };
 
+  const confirmCancelOrder = async () => {
+    const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${BACKEND_URL}/api/orders/cancel/${orderId}`, {
+      const res = await fetch(`${BACKEND_URL}/api/orders/cancel/${cancelModal.orderId}`, {
         method: 'PUT',
         headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
-        }
+        },
+        body: JSON.stringify({ reason: cancelReason || undefined })
       });
       const data = await res.json();
       if (res.ok) {
-        alert(data.message || 'Đã hủy đơn hàng.');
-        fetchMyOrders(); // reload
+        setCancelModal({ orderId: '', open: false });
+        fetchMyOrders();
       } else {
         alert(data.message || 'Không thể hủy đơn hàng.');
       }
@@ -789,13 +812,21 @@ export default function AccountPage() {
 
                               <div className="d-flex justify-content-between align-items-center">
                                 <div className="fs-7 text-secondary">
-                                  Phương thức: <strong className="text-white">{order.paymentMethod}</strong> | 
-                                  Thanh toán: <strong className={order.paymentStatus === 'PAID' ? 'text-success' : 'text-warning'}>
-                                    {order.paymentStatus === 'PAID' ? 'Đã thanh toán' : 'Chưa thanh toán'}
-                                  </strong>
+                                  <div>Giao tới: <span className="text-white">{order.customerAddress}</span></div>
+                                  <div className="mt-1">
+                                    Thanh toán: <strong className="text-white">{order.paymentMethod}</strong> |{' '}
+                                    <span className={order.paymentStatus === 'PAID' ? 'text-success fw-bold' : 'text-warning fw-bold'}>
+                                      {order.paymentStatus === 'PAID' ? '✅ Đã thanh toán' : '⏳ Chưa thanh toán'}
+                                    </span>
+                                  </div>
                                 </div>
                                 <div className="d-flex align-items-center gap-3">
-                                  <div className="text-right">
+                                  <div className="text-end">
+                                    {order.discountAmount > 0 && (
+                                      <small className="text-secondary d-block">
+                                        Đã giảm: <span className="text-danger fw-bold">-{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.discountAmount)}</span>
+                                      </small>
+                                    )}
                                     <span className="fs-8 text-secondary d-block">Tổng thanh toán:</span>
                                     <strong className="fs-6 text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</strong>
                                   </div>
@@ -809,6 +840,12 @@ export default function AccountPage() {
                                   )}
                                 </div>
                               </div>
+                              {/* Hiển thị lý do hủy nếu bị hủy */}
+                              {order.orderStatus === 'CANCELLED' && order.cancelReason && (
+                                <div className="mt-2 p-2 bg-black rounded border border-danger border-opacity-25">
+                                  <small className="text-danger">❌ Lý do hủy: <span className="text-secondary">{order.cancelReason}</span></small>
+                                </div>
+                              )}
                             </div>
                           ))}
                         </div>
@@ -991,6 +1028,54 @@ export default function AccountPage() {
       )}
 
       <ChatWidget />
+      
+      {/* Modal hủy đơn hàng */}
+      {cancelModal.open && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.7)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-dark border border-secondary text-white">
+              <div className="modal-header border-secondary">
+                <h5 className="modal-title">❌ Hủy đơn hàng</h5>
+                <button onClick={() => setCancelModal({ orderId: '', open: false })} className="btn-close btn-close-white" />
+              </div>
+              <div className="modal-body">
+                <p className="text-secondary fs-7 mb-3">
+                  Vui lòng cho biết lý do bạn muốn hủy đơn hàng này (tuỳ chọn):
+                </p>
+                <select
+                  className="form-select bg-black border-secondary text-white mb-3 fs-7"
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                >
+                  <option value="">-- Chọn lý do --</option>
+                  <option value="Tôi muốn thay đổi địa chỉ giao hàng">Muốn thay đổi địa chỉ giao hàng</option>
+                  <option value="Tôi muốn thay đổi sản phẩm">Muốn thay đổi sản phẩm</option>
+                  <option value="Tôi đặt nhầm sản phẩm">Đặt nhầm sản phẩm</option>
+                  <option value="Tìm được nơi mua rẻ hơn">Tìm được nơi mua rẻ hơn</option>
+                  <option value="Không còn nhu cầu mua">Không còn nhu cầu mua</option>
+                  <option value="Khác">Khác (nhập bên dưới)</option>
+                </select>
+                {cancelReason === 'Khác' && (
+                  <input
+                    type="text"
+                    className="form-control bg-black border-secondary text-white fs-7"
+                    placeholder="Nhập lý do của bạn..."
+                    onChange={(e) => setCancelReason(e.target.value)}
+                  />
+                )}
+              </div>
+              <div className="modal-footer border-secondary">
+                <button onClick={() => setCancelModal({ orderId: '', open: false })} className="btn btn-secondary btn-sm">
+                  Quay lại
+                </button>
+                <button onClick={confirmCancelOrder} className="btn btn-danger btn-sm px-4">
+                  Xác nhận hủy đơn
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <Footer />
 
       <style jsx>{`

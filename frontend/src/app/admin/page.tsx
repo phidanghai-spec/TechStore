@@ -57,6 +57,15 @@ export default function AdminPage() {
   const [deliveryStaffName, setDeliveryStaffName] = useState('');
   const [assigningOrderId, setAssigningOrderId] = useState<string | null>(null);
 
+  // Admin modal hủy đơn
+  const [adminCancelModal, setAdminCancelModal] = useState<{ orderId: string; open: boolean }>({ orderId: '', open: false });
+  const [adminCancelReason, setAdminCancelReason] = useState('');
+
+  // Modal nhập kho
+  const [stockInModal, setStockInModal] = useState<{ productId: string; productName: string; open: boolean }>({ productId: '', productName: '', open: false });
+  const [stockInQty, setStockInQty] = useState('');
+  const [stockInNote, setStockInNote] = useState('');
+
   // Dashboard Filter State
   const [statsStartDate, setStatsStartDate] = useState('');
   const [statsEndDate, setStatsEndDate] = useState('');
@@ -97,8 +106,8 @@ export default function AdminPage() {
 
   // Verify Admin role on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
+    const token = localStorage.getItem('admin_token');
+    const storedUser = localStorage.getItem('admin_user');
 
     if (!token || !storedUser) {
       router.push('/account');
@@ -146,7 +155,7 @@ export default function AdminPage() {
 
   const getHeaders = () => ({
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${localStorage.getItem('token')}`
+    'Authorization': `Bearer ${localStorage.getItem('admin_token')}`
   });
 
   // ==========================================
@@ -336,6 +345,12 @@ export default function AdminPage() {
   // ORDERS MANAGEMENT LOGIC
   // ==========================================
   const handleUpdateOrderStatus = async (orderId: string, status: string) => {
+    // Nếu hủy đơn — mở modal nhập lý do trước
+    if (status === 'CANCELLED') {
+      setAdminCancelModal({ orderId, open: true });
+      setAdminCancelReason('');
+      return;
+    }
     try {
       const res = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/status`, {
         method: 'PUT',
@@ -350,6 +365,25 @@ export default function AdminPage() {
       }
     } catch (err) {
       alert('Lỗi kết nối máy chủ.');
+    }
+  };
+
+  const confirmAdminCancelOrder = async () => {
+    try {
+      const res = await fetch(`${BACKEND_URL}/api/admin/orders/${adminCancelModal.orderId}/status`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ orderStatus: 'CANCELLED', cancelReason: adminCancelReason || undefined })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setAdminCancelModal({ orderId: '', open: false });
+        fetchAdminOrders();
+      } else {
+        alert(data.message || 'Lỗi hủy đơn hàng.');
+      }
+    } catch (err) {
+      alert('Lỗi kết nối.');
     }
   };
 
@@ -379,17 +413,26 @@ export default function AdminPage() {
     }
   };
 
-  const handleCollectDebt = async (orderId: string) => {
+  const handleStockIn = async () => {
+    if (!stockInQty || parseInt(stockInQty) <= 0) {
+      alert('Vui lòng nhập số lượng hợp lệ.');
+      return;
+    }
     try {
-      const res = await fetch(`${BACKEND_URL}/api/admin/orders/${orderId}/collect-debt`, {
-        method: 'PUT',
-        headers: getHeaders()
+      const res = await fetch(`${BACKEND_URL}/api/admin/products/${stockInModal.productId}/stock-in`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ quantity: parseInt(stockInQty), note: stockInNote || undefined })
       });
       const data = await res.json();
       if (res.ok) {
-        fetchAdminOrders();
+        alert(data.message);
+        setStockInModal({ productId: '', productName: '', open: false });
+        setStockInQty('');
+        setStockInNote('');
+        fetchAdminProducts();
       } else {
-        alert(data.message || 'Lỗi thu tiền công nợ.');
+        alert(data.message || 'Lỗi nhập kho.');
       }
     } catch (err) {
       alert('Lỗi kết nối.');
@@ -709,7 +752,7 @@ export default function AdminPage() {
     e.preventDefault();
     if (!adminChatInput.trim() || !activeCustomerId || !socketRef.current) return;
 
-    const storedUser = JSON.parse(localStorage.getItem('user')!);
+    const storedUser = JSON.parse(localStorage.getItem('admin_user')!);
 
     socketRef.current.emit('send_message', {
       senderId: storedUser.id,
@@ -798,6 +841,37 @@ export default function AdminPage() {
                   <div>
                     <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">Báo cáo doanh thu & Hoạt động</h4>
                     
+                    {/* Bộ lọc nhanh theo kỳ hạn */}
+                    <div className="d-flex gap-2 mb-3 flex-wrap">
+                      {[
+                        { label: 'Tuần này', getDates: () => {
+                          const now = new Date(); const day = now.getDay() || 7;
+                          const mon = new Date(now); mon.setDate(now.getDate() - day + 1);
+                          const sun = new Date(mon); sun.setDate(mon.getDate() + 6);
+                          return { s: mon.toISOString().split('T')[0], e: sun.toISOString().split('T')[0] };
+                        }},
+                        { label: 'Tháng này', getDates: () => {
+                          const now = new Date();
+                          return { s: `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`, e: now.toISOString().split('T')[0] };
+                        }},
+                        { label: 'Quý này', getDates: () => {
+                          const now = new Date(); const q = Math.floor(now.getMonth() / 3);
+                          const sm = q * 3; const em = sm + 2;
+                          const lastDay = new Date(now.getFullYear(), em + 1, 0);
+                          return { s: `${now.getFullYear()}-${String(sm+1).padStart(2,'0')}-01`, e: lastDay.toISOString().split('T')[0] };
+                        }},
+                        { label: 'Năm này', getDates: () => ({
+                          s: `${new Date().getFullYear()}-01-01`, e: new Date().toISOString().split('T')[0]
+                        })}
+                      ].map(({ label, getDates }) => (
+                        <button key={label} className="btn btn-outline-secondary btn-sm fs-8" onClick={() => {
+                          const { s, e } = getDates();
+                          setStatsStartDate(s); setStatsEndDate(e);
+                          setTimeout(() => fetchStats(), 50);
+                        }}>{label}</button>
+                      ))}
+                    </div>
+
                     {/* Stats Filter Bar */}
                     <div className="d-flex gap-2 mb-4 flex-wrap align-items-end bg-black p-3 rounded border border-secondary">
                       <div>
@@ -862,6 +936,40 @@ export default function AdminPage() {
                         {/* Chart */}
                         <h5 className="text-white fs-7 mb-3">Biểu đồ doanh thu theo thời gian</h5>
                         <RevenueChart data={stats.chartData} />
+
+                        {/* 3 bảng đơn theo trạng thái */}
+                        <div className="row g-4 mt-3">
+                          {[
+                            { key: 'PENDING',   label: '⏳ Đơn chờ duyệt',        color: 'warning' },
+                            { key: 'SHIPPING',  label: '🚚 Đơn đang vận chuyển',   color: 'primary' },
+                            { key: 'DELIVERED', label: '📦 Đơn đã giao thành công', color: 'success' },
+                          ].map(({ key, label, color }) => {
+                            const filtered = orders.filter(o => o.orderStatus === key);
+                            return (
+                              <div key={key} className="col-lg-4">
+                                <div className="bg-black p-3 rounded border border-secondary h-100">
+                                  <h6 className={`text-${color} mb-3 fs-7 fw-bold`}>{label} ({filtered.length})</h6>
+                                  {filtered.length === 0 ? (
+                                    <p className="text-secondary fs-8 text-center py-3">Không có đơn nào</p>
+                                  ) : (
+                                    <div className="d-flex flex-column gap-2" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                                      {filtered.map((o: any) => (
+                                        <div key={o.id} className="p-2 rounded" style={{ background: '#111', fontSize: '0.72rem' }}>
+                                          <div className="d-flex justify-content-between mb-1">
+                                            <strong className="text-white">#{o.id.substring(0,8).toUpperCase()}</strong>
+                                            <span className="text-secondary">{new Date(o.createdAt).toLocaleDateString('vi-VN')}</span>
+                                          </div>
+                                          <div className="text-secondary">{o.user?.fullName || o.customerName}</div>
+                                          <div className="text-primary fw-bold">{new Intl.NumberFormat('vi-VN').format(o.totalAmount)}đ</div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
                       </>
                     ) : <p>Lỗi tải dữ liệu.</p>}
                   </div>
@@ -987,6 +1095,11 @@ export default function AdminPage() {
                               </td>
                               <td className="text-center">
                                 <button onClick={() => handleEditProduct(p)} className="btn btn-link text-primary btn-sm p-0 me-2">Sửa</button>
+                                <button
+                                  onClick={() => setStockInModal({ productId: p.id, productName: p.name, open: true })}
+                                  className="btn btn-link text-success btn-sm p-0 me-2"
+                                  title="Nhập kho"
+                                >+Kho</button>
                                 <button onClick={() => handleDeleteProduct(p.id)} className="btn btn-link text-danger btn-sm p-0">Xóa</button>
                               </td>
                             </tr>
@@ -1685,6 +1798,92 @@ export default function AdminPage() {
         </div>
       </div>
       <Footer />
+
+      {/* Modal hủy đơn hàng (Admin) */}
+      {adminCancelModal.open && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.75)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-dark border border-secondary text-white">
+              <div className="modal-header border-secondary">
+                <h5 className="modal-title">❌ Hủy đơn hàng (Admin)</h5>
+                <button onClick={() => setAdminCancelModal({ orderId: '', open: false })} className="btn-close btn-close-white" />
+              </div>
+              <div className="modal-body">
+                <p className="text-secondary fs-7 mb-3">Chọn lý do hủy đơn hàng:</p>
+                <select
+                  className="form-select bg-black border-secondary text-white mb-3 fs-7"
+                  value={adminCancelReason}
+                  onChange={(e) => setAdminCancelReason(e.target.value)}
+                >
+                  <option value="">-- Chọn lý do --</option>
+                  <option value="Sản phẩm hết hàng">Sản phẩm hết hàng</option>
+                  <option value="Thông tin giao hàng không hợp lệ">Thông tin giao hàng không hợp lệ</option>
+                  <option value="Khách hàng yêu cầu hủy">Khách hàng yêu cầu hủy</option>
+                  <option value="Nghi ngờ gian lận">Nghi ngờ gian lận</option>
+                  <option value="Không thể giao tới địa chỉ">Không thể giao tới địa chỉ</option>
+                  <option value="Khác">Khác (nhập bên dưới)</option>
+                </select>
+                {adminCancelReason === 'Khác' && (
+                  <input
+                    type="text"
+                    className="form-control bg-black border-secondary text-white fs-7"
+                    placeholder="Nhập lý do..."
+                    onChange={(e) => setAdminCancelReason(e.target.value)}
+                  />
+                )}
+              </div>
+              <div className="modal-footer border-secondary">
+                <button onClick={() => setAdminCancelModal({ orderId: '', open: false })} className="btn btn-secondary btn-sm">Hủy bỏ</button>
+                <button onClick={confirmAdminCancelOrder} className="btn btn-danger btn-sm px-4">Xác nhận hủy đơn</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal nhập kho */}
+      {stockInModal.open && (
+        <div className="modal d-block" style={{ background: 'rgba(0,0,0,0.75)', zIndex: 9999 }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content bg-dark border border-secondary text-white">
+              <div className="modal-header border-secondary">
+                <h5 className="modal-title">📦 Nhập kho sản phẩm</h5>
+                <button onClick={() => setStockInModal({ productId: '', productName: '', open: false })} className="btn-close btn-close-white" />
+              </div>
+              <div className="modal-body">
+                <p className="text-secondary fs-7 mb-3">
+                  Sản phẩm: <strong className="text-white">{stockInModal.productName}</strong>
+                </p>
+                <div className="mb-3">
+                  <label className="form-label fs-8 text-secondary">Số lượng nhập *</label>
+                  <input
+                    type="number"
+                    min="1"
+                    className="form-control bg-black border-secondary text-white fs-7"
+                    placeholder="Nhập số lượng..."
+                    value={stockInQty}
+                    onChange={(e) => setStockInQty(e.target.value)}
+                  />
+                </div>
+                <div className="mb-2">
+                  <label className="form-label fs-8 text-secondary">Ghi chú (tuỳ chọn)</label>
+                  <input
+                    type="text"
+                    className="form-control bg-black border-secondary text-white fs-7"
+                    placeholder="Ví dụ: Nhập từ nhà cung cấp ABC..."
+                    value={stockInNote}
+                    onChange={(e) => setStockInNote(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div className="modal-footer border-secondary">
+                <button onClick={() => setStockInModal({ productId: '', productName: '', open: false })} className="btn btn-secondary btn-sm">Hủy</button>
+                <button onClick={handleStockIn} className="btn btn-success btn-sm px-4">✅ Xác nhận nhập kho</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style jsx>{`
         .btn-xs {
