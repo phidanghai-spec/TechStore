@@ -153,11 +153,44 @@ export default function AdminPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isCustomerTyping]);
 
+  // Xác thực quyền Admin khi mở trang Quản trị (tự động đồng bộ Token)
+  useEffect(() => {
+    const adminToken = localStorage.getItem('admin_token');
+    const token = localStorage.getItem('token');
+    const validToken = (adminToken && adminToken !== 'null' && adminToken !== 'undefined') ? adminToken : (token && token !== 'null' && token !== 'undefined') ? token : null;
+
+    const adminUser = localStorage.getItem('admin_user');
+    const user = localStorage.getItem('user');
+    const validUser = (adminUser && adminUser !== 'null' && adminUser !== 'undefined') ? adminUser : (user && user !== 'null' && user !== 'undefined') ? user : null;
+
+    if (!validToken || !validUser) {
+      router.push('/account');
+      return;
+    }
+
+    try {
+      const parsedUser = JSON.parse(validUser);
+      if (parsedUser.role !== 'ADMIN') {
+        alert('Bạn không có quyền truy cập trang quản trị.');
+        router.push('/account');
+      } else {
+        setIsAdmin(true);
+        // Tự động lưu sang admin_token & admin_user để các lần sau truy cập mượt mà
+        localStorage.setItem('admin_token', validToken);
+        localStorage.setItem('admin_user', validUser);
+      }
+    } catch (e) {
+      router.push('/account');
+    }
+  }, []);
+
   const getHeaders = () => {
-    const token = localStorage.getItem('admin_token') || localStorage.getItem('token') || '';
+    const adminToken = localStorage.getItem('admin_token');
+    const token = localStorage.getItem('token');
+    const validToken = (adminToken && adminToken !== 'null' && adminToken !== 'undefined') ? adminToken : (token && token !== 'null' && token !== 'undefined') ? token : '';
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${token}`
+      'Authorization': `Bearer ${validToken}`
     };
   };
 
@@ -171,8 +204,25 @@ export default function AdminPage() {
       if (statsStartDate) params.append('startDate', statsStartDate);
       if (statsEndDate) params.append('endDate', statsEndDate);
       const res = await fetch(`${BACKEND_URL}/api/admin/stats?${params.toString()}`, { headers: getHeaders() });
-      if (res.ok) setStats(await res.json());
-    } catch (e) { console.error(e); }
+      if (res.ok) {
+        setStats(await res.json());
+      } else {
+        setStats({
+          totalRevenue: 0,
+          paymentSplit: { cod: 0, online: 0 },
+          statusCounts: { PENDING: 0, APPROVED: 0, SHIPPING: 0, DELIVERED: 0, CANCELLED: 0 },
+          chartData: []
+        });
+      }
+    } catch (e) {
+      console.error(e);
+      setStats({
+        totalRevenue: 0,
+        paymentSplit: { cod: 0, online: 0 },
+        statusCounts: { PENDING: 0, APPROVED: 0, SHIPPING: 0, DELIVERED: 0, CANCELLED: 0 },
+        chartData: []
+      });
+    }
     setStatsLoading(false);
   };
 
