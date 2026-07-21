@@ -2,7 +2,7 @@
 
 ## 🌐 Link Demo
 - **Website:** https://frontend-ruby-phi-14.vercel.app
-- **API:** https://techstore-backend-ftzs.onrender.com
+- **API:** https://techstore-backend-l1zs.onrender.com
 
 ## 👤 Tài Khoản Demo
 | Vai trò | Email | Mật khẩu |
