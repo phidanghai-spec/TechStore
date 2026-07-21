@@ -30,6 +30,7 @@ const formatDate = (dateStr: string) => {
 export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
+  // Trigger Vercel rebuild for admin warranty management
   const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'coupons' | 'cskh' | 'chat' | 'warranties'>('dashboard');
 
   // Dashboard Stats State
