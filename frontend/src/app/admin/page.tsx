@@ -1180,7 +1180,6 @@ export default function AdminPage() {
                             <th>Ngày đặt</th>
                             <th>Trạng thái</th>
                             <th>Thanh toán</th>
-                            <th>Công nợ COD</th>
                             <th>Shipper</th>
                             <th className="text-center" style={{ width: '180px' }}>Hành động</th>
                           </tr>
@@ -1213,7 +1212,6 @@ export default function AdminPage() {
                                 {o.orderStatus === 'CANCELLED' && <span className="badge bg-danger">Hủy</span>}
                               </td>
                               <td><span className={o.paymentStatus==='PAID'?'text-success':'text-warning'}>{o.paymentStatus === 'PAID' ? 'Đã thu' : 'Chưa thu'}</span></td>
-                              <td>{o.isDebt ? <span className="text-danger fw-bold">Nợ: Shipper</span> : <span className="text-secondary">-</span>}</td>
                               <td>{o.deliveryStaff || '-'}</td>
                               <td className="text-center">
                                 {o.orderStatus === 'PENDING' && (
@@ -1227,9 +1225,6 @@ export default function AdminPage() {
                                     <button onClick={() => handleUpdateOrderStatus(o.id, 'DELIVERED')} className="btn btn-success btn-xs">Thành công</button>
                                     <button onClick={() => handleUpdateOrderStatus(o.id, 'CANCELLED')} className="btn btn-danger btn-xs">Thất bại</button>
                                   </div>
-                                )}
-                                {o.isDebt && (
-                                  <button onClick={() => handleCollectDebt(o.id)} className="btn btn-primary btn-xs w-100">Thu tiền COD</button>
                                 )}
                               </td>
                             </tr>
