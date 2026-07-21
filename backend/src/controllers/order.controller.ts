@@ -26,13 +26,18 @@ export class OrderController {
 
     try {
       // 1. Validate products and calculate prices
-      const productIds = items.map((item: any) => item.productId);
+      const productIds = items.map((item: any) => item.productId).filter(Boolean);
       const dbProducts = await prisma.product.findMany({
         where: { id: { in: productIds } }
       });
 
       if (dbProducts.length !== items.length) {
-        return res.status(400).json({ message: 'Một số sản phẩm trong giỏ hàng không tồn tại.' });
+        // Find missing products
+        const foundIds = new Set(dbProducts.map(p => p.id));
+        const missingItems = items.filter((item: any) => !foundIds.has(item.productId));
+        return res.status(400).json({ 
+          message: `Giỏ hàng chứa sản phẩm không còn tồn tại trên hệ thống. Vui lòng xóa giỏ hàng và chọn lại sản phẩm.` 
+        });
       }
 
       // Check stock limit for all items
@@ -225,9 +230,11 @@ export class OrderController {
         order: result
       });
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Create order error:', error);
-      return res.status(500).json({ message: 'Đã xảy ra lỗi hệ thống khi xử lý đặt hàng.' });
+      return res.status(500).json({ 
+        message: error?.message || 'Đã xảy ra lỗi hệ thống khi xử lý đặt hàng.' 
+      });
     }
   }
 
