@@ -37,6 +37,7 @@ enum PaymentMethod {
   COD
   MOMO
   PAYPAL
+  VNPAY
 }
 
 enum PaymentStatus {
