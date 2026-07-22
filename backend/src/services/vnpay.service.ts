@@ -5,8 +5,8 @@ import crypto from 'crypto';
  * Docs: https://sandbox.vnpayment.vn/apis/docs/thanh-toan-pay/pay.html
  */
 
-const VNPAY_TMN_CODE = process.env.VNPAY_TMN_CODE || 'CGXZ029Y';
-const VNPAY_HASH_SECRET = process.env.VNPAY_HASH_SECRET || 'RAM2W092GHUYSYSTBAERBNLL64B3BEAY';
+const VNPAY_TMN_CODE = process.env.VNPAY_TMN_CODE || 'DLJ23DOO';
+const VNPAY_HASH_SECRET = process.env.VNPAY_HASH_SECRET || '46E2U5KV1SF0CERB0HLA3KAGHB62Q1SZ';
 const VNPAY_URL = process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://techstore-backend-l1zs.onrender.com';
 const VNPAY_RETURN_URL = process.env.VNPAY_RETURN_URL || `${BACKEND_URL}/api/payments/vnpay/vnpay_return`;
