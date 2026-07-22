@@ -6,6 +6,27 @@ import { MailService } from '../services/mail.service';
 
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
+function getFrontendUrl(req: Request): string {
+  let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+
+  // Chống lỗi 404 khi FRONTEND_URL trên Render trỏ nhầm domain Vercel tạm thời đã bị xóa (techstore-temp.vercel.app)
+  if (frontendUrl.includes('techstore-temp.vercel.app') || !frontendUrl) {
+    const referer = req.headers.referer || req.headers.origin;
+    if (referer && !referer.includes('techstore-temp.vercel.app')) {
+      try {
+        const parsed = new URL(referer as string);
+        frontendUrl = `${parsed.protocol}//${parsed.host}`;
+      } catch {
+        frontendUrl = 'https://frontend-ruby-phi-14.vercel.app';
+      }
+    } else {
+      frontendUrl = 'https://frontend-ruby-phi-14.vercel.app';
+    }
+  }
+
+  return frontendUrl.replace(/\/$/, '');
+}
+
 export class PaymentController {
   /**
    * Tạo URL thanh toán MoMo và redirect
@@ -239,12 +260,14 @@ export class PaymentController {
       const verify = VnpayService.verifyIpn(req.query);
 
       const isSuccess = verify.isValid && verify.responseCode === '00';
-      const redirectUrl = `${FRONTEND_URL}/checkout/result?orderId=${verify.orderId}&paymentMethod=VNPAY&vnp_ResponseCode=${verify.responseCode}&success=${isSuccess ? 'true' : 'false'}`;
+      const baseUrl = getFrontendUrl(req);
+      const redirectUrl = `${baseUrl}/checkout/result?orderId=${verify.orderId}&paymentMethod=VNPAY&vnp_ResponseCode=${verify.responseCode}&success=${isSuccess ? 'true' : 'false'}`;
 
       return res.redirect(redirectUrl);
     } catch (error) {
       console.error('VNPAY return error:', error);
-      return res.redirect(`${FRONTEND_URL}/checkout/result?success=false`);
+      const baseUrl = getFrontendUrl(req);
+      return res.redirect(`${baseUrl}/checkout/result?success=false`);
     }
   }
 
