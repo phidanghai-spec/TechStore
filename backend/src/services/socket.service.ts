@@ -87,7 +87,9 @@ export class SocketService {
               });
             }
             actualSenderId = guestUser.id;
-            // Emit UUID thật về cho client để dùng khi so sánh tin nhắn
+            // Server join phòng UUID thật ngay lập tức (không chờ client re-join)
+            socket.join(actualSenderId);
+            // Emit UUID thật về cho client để client cũng join_room(UUID) và dùng cho các lần sau
             socket.emit('guest_registered', { userId: guestUser.id });
           }
 

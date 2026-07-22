@@ -31,7 +31,7 @@ export default function AdminPage() {
   const router = useRouter();
   const [isAdmin, setIsAdmin] = useState(false);
   // Trigger Vercel rebuild for admin warranty management
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'coupons' | 'cskh' | 'chat' | 'warranties'>('dashboard');
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'products' | 'orders' | 'users' | 'coupons' | 'cskh' | 'chat' | 'warranties' | 'inventory'>('dashboard');
 
   // Dashboard Stats State
   const [stats, setStats] = useState<any>(null);
@@ -66,6 +66,20 @@ export default function AdminPage() {
   const [stockInQty, setStockInQty] = useState('');
   const [stockInNote, setStockInNote] = useState('');
 
+  // Inventory tab state
+  const [stockMovements, setStockMovements] = useState<any[]>([]);
+  const [stockMovTotal, setStockMovTotal] = useState(0);
+  const [stockMovPage, setStockMovPage] = useState(1);
+  const [stockMovTotalPages, setStockMovTotalPages] = useState(1);
+  const [invFilterType, setInvFilterType] = useState('');
+  const [invFilterFrom, setInvFilterFrom] = useState('');
+  const [invFilterTo, setInvFilterTo] = useState('');
+  const [invSelectedProduct, setInvSelectedProduct] = useState('');
+  const [invTxType, setInvTxType] = useState<'IMPORT' | 'EXPORT'>('IMPORT');
+  const [invTxQty, setInvTxQty] = useState('');
+  const [invTxNote, setInvTxNote] = useState('');
+  const [invTxLoading, setInvTxLoading] = useState(false);
+  const [invLoading, setInvLoading] = useState(false);
   // Dashboard Filter State
   const [statsStartDate, setStatsStartDate] = useState('');
   const [statsEndDate, setStatsEndDate] = useState('');
@@ -102,6 +116,7 @@ export default function AdminPage() {
   // Admin Chat State
   const [conversations, setConversations] = useState<any[]>([]);
   const [activeCustomerId, setActiveCustomerId] = useState<string | null>(null);
+  const activeCustomerIdRef = useRef<string | null>(null); // Ref để không bị stale closure trong socket listener
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [adminChatInput, setAdminChatInput] = useState('');
   const [isCustomerTyping, setIsCustomerTyping] = useState(false);
@@ -143,6 +158,7 @@ export default function AdminPage() {
     if (activeTab === 'cskh') { fetchAdminReviews(); fetchAdminQnas(); }
     if (activeTab === 'chat') { fetchAdminChatList(); initChatSocket(); }
     if (activeTab === 'warranties') fetchAdminWarranties();
+    if (activeTab === 'inventory') { fetchAdminProducts(); fetchStockMovements(1); }
 
     // cleanup socket on tab change
     return () => {
@@ -819,28 +835,49 @@ export default function AdminPage() {
     const socket = io(SOCKET_URL, { withCredentials: true });
     socketRef.current = socket;
 
-    // Listen for new messages globally
-    socket.on('new_message_notification', (data: any) => {
-      // Refresh chat list to show new message preview
+    // new_message_notification: CHỈ refresh danh sách hội thoại (preview bên trái)
+    // KHÔNG append vào chatMessages — tránh hiện thị trùng lắp với receive_message
+    socket.on('new_message_notification', () => {
       fetchAdminChatList();
-      
-      // If we are currently chatting with this customer, add to message list
-      if (activeCustomerId && data.roomId === activeCustomerId) {
-        setChatMessages(prev => [...prev, data.message]);
+    });
+
+    // receive_message: nơi DUY NHẤT append tin nhắn vào khung chat đang mở
+    socket.on('receive_message', (msg: any) => {
+      const currentRoom = activeCustomerIdRef.current;
+      if (currentRoom && (msg.senderId === currentRoom || msg.receiverId === currentRoom)) {
+        setChatMessages(prev => [...prev, msg]);
       }
     });
 
-    // Listen for typing indicator
     socket.on('typing_status', (data: { isTyping: boolean; senderName: string }) => {
-      // If active conversation customer is typing
-      if (activeCustomerId) {
+      if (activeCustomerIdRef.current) {
         setIsCustomerTyping(data.isTyping);
       }
     });
   };
 
+  const fetchStockMovements = async (page = 1) => {
+    setInvLoading(true);
+    try {
+      const params = new URLSearchParams({ page: String(page), limit: '15' });
+      if (invFilterType) params.set('type', invFilterType);
+      if (invFilterFrom) params.set('from', invFilterFrom);
+      if (invFilterTo) params.set('to', invFilterTo);
+      const res = await fetch(`${BACKEND_URL}/api/admin/stock-movements?${params}`, { headers: getHeaders() });
+      if (res.ok) {
+        const d = await res.json();
+        setStockMovements(d.movements || []);
+        setStockMovTotal(d.total || 0);
+        setStockMovTotalPages(d.totalPages || 1);
+        setStockMovPage(page);
+      }
+    } catch {}
+    finally { setInvLoading(false); }
+  };
+
   const handleSelectCustomerChat = async (customerId: string) => {
     setActiveCustomerId(customerId);
+    activeCustomerIdRef.current = customerId; // Đồng bộ ref với state
     setChatMessages([]);
     setIsCustomerTyping(false);
 
@@ -930,6 +967,9 @@ export default function AdminPage() {
                   </button>
                   <button onClick={() => setActiveTab('warranties')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'warranties' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                     🛡 Quản lý Bảo hành
+                  </button>
+                  <button onClick={() => setActiveTab('inventory')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'inventory' ? 'text-primary fw-bold' : 'text-secondary'}`}>
+                    📦 Quản lý Kho
                   </button>
                   <button onClick={() => setActiveTab('chat')} className={`list-group-item list-group-item-action bg-transparent border-0 text-start py-2 fs-7 ${activeTab === 'chat' ? 'text-primary fw-bold' : 'text-secondary'}`}>
                     💬 Chat hỗ trợ trực tuyến
@@ -1964,6 +2004,141 @@ export default function AdminPage() {
                     </div>
                   </div>
                 )}
+                {/* ==========================================
+                    9. QUẢN LÝ KHO HÀNG
+                   ========================================== */}
+                {activeTab === 'inventory' && (() => {
+                  const fetchSM = async (page = 1) => {
+                    setInvLoading(true);
+                    try {
+                      const params = new URLSearchParams({ page: String(page), limit: '15' });
+                      if (invFilterType) params.set('type', invFilterType);
+                      if (invFilterFrom) params.set('from', invFilterFrom);
+                      if (invFilterTo) params.set('to', invFilterTo);
+                      const res = await fetch(`${BACKEND_URL}/api/admin/stock-movements?${params}`, { headers: getHeaders() });
+                      if (res.ok) {
+                        const d = await res.json();
+                        setStockMovements(d.movements || []);
+                        setStockMovTotal(d.total || 0);
+                        setStockMovTotalPages(d.totalPages || 1);
+                        setStockMovPage(page);
+                      }
+                    } catch {}
+                    finally { setInvLoading(false); }
+                  };
+                  const handleInvTx = async () => {
+                    if (!invSelectedProduct || !invTxQty || parseInt(invTxQty) <= 0) {
+                      return alert('Vui lòng chọn sản phẩm và nhập số lượng hợp lệ.');
+                    }
+                    setInvTxLoading(true);
+                    const ep = invTxType === 'IMPORT' ? 'stock-in' : 'stock-out';
+                    try {
+                      const res = await fetch(`${BACKEND_URL}/api/admin/products/${invSelectedProduct}/${ep}`, {
+                        method: 'POST',
+                        headers: { ...getHeaders(), 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ quantity: parseInt(invTxQty), note: invTxNote || undefined })
+                      });
+                      const d = await res.json();
+                      if (res.ok) { alert(d.message); setInvTxQty(''); setInvTxNote(''); fetchSM(1); }
+                      else alert(d.message || 'Lỗi xảy ra.');
+                    } catch { alert('Lỗi kết nối.'); }
+                    finally { setInvTxLoading(false); }
+                  };
+                  return (
+                    <div>
+                      <h4 className="text-white text-uppercase fs-6 mb-4 pb-2 border-bottom border-secondary">📦 Quản lý Kho hàng</h4>
+                      <div className="bg-black border border-secondary rounded p-3 mb-4">
+                        <h6 className="text-white fs-7 mb-3">➕ Giao dịch nhập / xuất kho</h6>
+                        <div className="row g-2">
+                          <div className="col-md-4">
+                            <label className="form-label fs-8 text-secondary">Sản phẩm</label>
+                            <select className="form-select form-select-sm bg-black border-secondary text-white fs-8" value={invSelectedProduct} onChange={e => setInvSelectedProduct(e.target.value)}>
+                              <option value="">-- Chọn sản phẩm --</option>
+                              {products.map((p: any) => <option key={p.id} value={p.id}>{p.name} (Tồn: {p.stock})</option>)}
+                            </select>
+                          </div>
+                          <div className="col-md-2">
+                            <label className="form-label fs-8 text-secondary">Loại GD</label>
+                            <select className="form-select form-select-sm bg-black border-secondary text-white fs-8" value={invTxType} onChange={e => setInvTxType(e.target.value as 'IMPORT' | 'EXPORT')}>
+                              <option value="IMPORT">📥 Nhập kho</option>
+                              <option value="EXPORT">📤 Xuất kho</option>
+                            </select>
+                          </div>
+                          <div className="col-md-2">
+                            <label className="form-label fs-8 text-secondary">Số lượng</label>
+                            <input type="number" min="1" className="form-control form-control-sm bg-black border-secondary text-white fs-8" value={invTxQty} onChange={e => setInvTxQty(e.target.value)} placeholder="0" />
+                          </div>
+                          <div className="col-md-3">
+                            <label className="form-label fs-8 text-secondary">Ghi chú</label>
+                            <input type="text" className="form-control form-control-sm bg-black border-secondary text-white fs-8" value={invTxNote} onChange={e => setInvTxNote(e.target.value)} placeholder="Hàng hư, kiểm kê..." />
+                          </div>
+                          <div className="col-md-1 d-flex align-items-end">
+                            <button onClick={handleInvTx} disabled={invTxLoading} className={`btn btn-sm w-100 ${invTxType === 'IMPORT' ? 'btn-success' : 'btn-warning'}`}>
+                              {invTxLoading ? '⏳' : invTxType === 'IMPORT' ? '📥' : '📤'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="d-flex flex-wrap gap-2 mb-3 align-items-end">
+                        <div>
+                          <label className="form-label fs-8 text-secondary m-0 mb-1">Loại GD</label>
+                          <select className="form-select form-select-sm bg-black border-secondary text-white fs-8" value={invFilterType} onChange={e => setInvFilterType(e.target.value)} style={{ width: '130px' }}>
+                            <option value="">Tất cả</option>
+                            <option value="IMPORT">📥 Nhập</option>
+                            <option value="EXPORT">📤 Xuất</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="form-label fs-8 text-secondary m-0 mb-1">Từ ngày</label>
+                          <input type="date" className="form-control form-control-sm bg-black border-secondary text-white fs-8" value={invFilterFrom} onChange={e => setInvFilterFrom(e.target.value)} />
+                        </div>
+                        <div>
+                          <label className="form-label fs-8 text-secondary m-0 mb-1">Đến ngày</label>
+                          <input type="date" className="form-control form-control-sm bg-black border-secondary text-white fs-8" value={invFilterTo} onChange={e => setInvFilterTo(e.target.value)} />
+                        </div>
+                        <button onClick={() => fetchSM(1)} className="btn btn-primary btn-sm">🔍 Lọc</button>
+                        <button onClick={() => { setInvFilterType(''); setInvFilterFrom(''); setInvFilterTo(''); fetchSM(1); }} className="btn btn-outline-secondary btn-sm">↺ Reset</button>
+                        <span className="text-secondary fs-8 ms-auto">Tổng: {stockMovTotal} giao dịch</span>
+                      </div>
+                      <div className="table-responsive">
+                        <table className="table table-dark table-sm table-hover border-secondary">
+                          <thead>
+                            <tr className="text-secondary fs-8">
+                              <th>Thời gian</th><th>Sản phẩm</th><th>Loại</th><th className="text-center">SL</th><th>Ghi chú</th>
+                            </tr>
+                          </thead>
+                          <tbody className="fs-8">
+                            {invLoading ? (
+                              <tr><td colSpan={5} className="text-center text-secondary py-4">Đang tải...</td></tr>
+                            ) : stockMovements.length === 0 ? (
+                              <tr><td colSpan={5} className="text-center text-secondary py-4">Chưa có lịch sử.</td></tr>
+                            ) : stockMovements.map((mv: any) => (
+                              <tr key={mv.id}>
+                                <td className="text-secondary">{formatDate(mv.createdAt)}</td>
+                                <td>
+                                  <div className="text-white" style={{ maxWidth: '200px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                    {mv.product?.name || mv.productId}
+                                  </div>
+                                  <small className="text-secondary">Tồn: {mv.product?.stock ?? '—'}</small>
+                                </td>
+                                <td><span className={`badge ${mv.type === 'IMPORT' ? 'bg-success' : 'bg-warning text-dark'}`}>{mv.type === 'IMPORT' ? '📥 Nhập' : '📤 Xuất'}</span></td>
+                                <td className="text-center fw-bold text-white">{mv.quantity}</td>
+                                <td className="text-secondary">{mv.note || '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                      {stockMovTotalPages > 1 && (
+                        <div className="d-flex justify-content-center gap-2 mt-2">
+                          <button disabled={stockMovPage <= 1} onClick={() => fetchSM(stockMovPage - 1)} className="btn btn-outline-secondary btn-sm">‹ Trước</button>
+                          <span className="text-secondary align-self-center fs-8">{stockMovPage} / {stockMovTotalPages}</span>
+                          <button disabled={stockMovPage >= stockMovTotalPages} onClick={() => fetchSM(stockMovPage + 1)} className="btn btn-outline-secondary btn-sm">Sau ›</button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
               </div>
             </div>

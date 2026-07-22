@@ -57,6 +57,9 @@ export default function AccountPage() {
   const [cancelModal, setCancelModal] = useState<{ orderId: string; open: boolean }>({ orderId: '', open: false });
   const [cancelReason, setCancelReason] = useState('');
 
+  // Modal chi tiết đơn hàng
+  const [detailOrder, setDetailOrder] = useState<any | null>(null);
+
   // Password change state
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -842,6 +845,12 @@ export default function AccountPage() {
                               <div className="d-flex justify-content-between align-items-center">
                                 <div className="fs-7 text-secondary">
                                   <div>Giao tới: <span className="text-white">{order.customerAddress}</span></div>
+                                  {order.customerPhone && (
+                                    <div className="mt-1">SĐT: <span className="text-white">{order.customerPhone}</span></div>
+                                  )}
+                                  {order.deliveryStaff && (
+                                    <div className="mt-1">🚴 Nhân viên giao: <span className="text-white">{order.deliveryStaff}</span></div>
+                                  )}
                                   <div className="mt-1">
                                     Thanh toán: <strong className="text-white">{order.paymentMethod}</strong> |{' '}
                                     <span className={order.paymentStatus === 'PAID' ? 'text-success fw-bold' : 'text-warning fw-bold'}>
@@ -859,20 +868,34 @@ export default function AccountPage() {
                                     <span className="fs-8 text-secondary d-block">Tổng thanh toán:</span>
                                     <strong className="fs-6 text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(order.totalAmount)}</strong>
                                   </div>
-                                  {order.orderStatus === 'PENDING' && (
-                                    <button 
-                                      onClick={() => handleCancelOrder(order.id)}
-                                      className="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                  <div className="d-flex flex-column gap-1">
+                                    <button
+                                      onClick={() => setDetailOrder(order)}
+                                      className="btn btn-outline-secondary btn-sm rounded-pill px-3"
+                                      style={{ fontSize: '0.72rem' }}
                                     >
-                                      Hủy đơn
+                                      📄 Xem chi tiết
                                     </button>
-                                  )}
+                                    {order.orderStatus === 'PENDING' && (
+                                      <button 
+                                        onClick={() => handleCancelOrder(order.id)}
+                                        className="btn btn-outline-danger btn-sm rounded-pill px-3"
+                                      >
+                                        Hủy đơn
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                               {/* Hiển thị lý do hủy nếu bị hủy */}
                               {order.orderStatus === 'CANCELLED' && order.cancelReason && (
                                 <div className="mt-2 p-2 bg-black rounded border border-danger border-opacity-25">
                                   <small className="text-danger">❌ Lý do hủy: <span className="text-secondary">{order.cancelReason}</span></small>
+                                  {order.cancelledAt && (
+                                    <small className="text-secondary d-block mt-1">
+                                      ⏰ Thời điểm hủy: {new Date(order.cancelledAt).toLocaleString('vi-VN')}
+                                    </small>
+                                  )}
                                 </div>
                               )}
                             </div>
@@ -1168,6 +1191,127 @@ export default function AccountPage() {
         </div>
       )}
       <Footer />
+
+      {/* Modal Chi tiết đơn hàng */}
+      {detailOrder && (
+        <div className="modal show d-block" style={{ background: 'rgba(0,0,0,0.75)', zIndex: 1060 }} onClick={() => setDetailOrder(null)}>
+          <div className="modal-dialog modal-lg modal-dialog-scrollable" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-content bg-black border-secondary text-white">
+              <div className="modal-header border-secondary">
+                <h5 className="modal-title fw-bold">
+                  📦 Chi tiết đơn hàng #{detailOrder.id.toUpperCase()}
+                </h5>
+                <button type="button" className="btn-close btn-close-white" onClick={() => setDetailOrder(null)} />
+              </div>
+              <div className="modal-body">
+                {/* Thông tin cơ bản */}
+                <div className="row g-3 mb-4">
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Ngày đặt hàng</small>
+                    <span className="text-white">{new Date(detailOrder.createdAt).toLocaleString('vi-VN')}</span>
+                  </div>
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Trạng thái đơn hàng</small>
+                    <span>{getOrderStatusText(detailOrder.orderStatus)}</span>
+                  </div>
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Họ tên người nhận</small>
+                    <span className="text-white">{detailOrder.customerName}</span>
+                  </div>
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Số điện thoại</small>
+                    <span className="text-white">{detailOrder.customerPhone || '—'}</span>
+                  </div>
+                  <div className="col-12">
+                    <small className="text-secondary d-block">Địa chỉ giao hàng</small>
+                    <span className="text-white">{detailOrder.customerAddress}</span>
+                  </div>
+                  {detailOrder.deliveryStaff && (
+                    <div className="col-sm-6">
+                      <small className="text-secondary d-block">🚴 Nhân viên giao hàng</small>
+                      <span className="text-white">{detailOrder.deliveryStaff}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Danh sách sản phẩm */}
+                <h6 className="text-secondary text-uppercase fs-8 mb-2 border-bottom border-secondary pb-1">Sản phẩm đặt mua</h6>
+                <div className="d-flex flex-column gap-2 mb-4">
+                  {detailOrder.items?.map((item: any, k: number) => (
+                    <div key={k} className="d-flex justify-content-between align-items-center py-2 border-bottom border-dark">
+                      <div className="d-flex align-items-center gap-2">
+                        <img
+                          src={item.product?.imageUrl || 'https://placehold.co/48x48/1a1a1a/ffffff?text=SP'}
+                          width="48" height="48"
+                          className="rounded"
+                          style={{ objectFit: 'contain' }}
+                          onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/48x48/1a1a1a/ffffff?text=SP'; }}
+                        />
+                        <div>
+                          <div className="text-white fs-7">{item.product?.name || 'Sản phẩm'}</div>
+                          <small className="text-secondary">
+                            {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price)} × {item.quantity}
+                          </small>
+                        </div>
+                      </div>
+                      <strong className="text-primary">
+                        {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(item.price * item.quantity)}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Thanh toán */}
+                <h6 className="text-secondary text-uppercase fs-8 mb-2 border-bottom border-secondary pb-1">Thanh toán</h6>
+                <div className="row g-2 mb-3">
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Phương thức</small>
+                    <strong className="text-white">{detailOrder.paymentMethod}</strong>
+                  </div>
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Trạng thái</small>
+                    <span className={detailOrder.paymentStatus === 'PAID' ? 'text-success fw-bold' : 'text-warning fw-bold'}>
+                      {detailOrder.paymentStatus === 'PAID' ? '✅ Đã thanh toán' : detailOrder.paymentStatus === 'FAILED' ? '❌ Thất bại' : '⏳ Chưa thanh toán'}
+                    </span>
+                  </div>
+                  {detailOrder.discountAmount > 0 && (
+                    <div className="col-sm-6">
+                      <small className="text-secondary d-block">Giảm giá</small>
+                      <span className="text-danger fw-bold">-{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(detailOrder.discountAmount)}</span>
+                    </div>
+                  )}
+                  <div className="col-sm-6">
+                    <small className="text-secondary d-block">Tổng thanh toán</small>
+                    <strong className="text-primary fs-5">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(detailOrder.totalAmount)}</strong>
+                  </div>
+                </div>
+
+                {/* Lý do hủy nếu có */}
+                {detailOrder.orderStatus === 'CANCELLED' && (
+                  <div className="p-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 rounded">
+                    <small className="text-danger fw-bold d-block mb-1">❌ Đơn hàng đã bị hủy</small>
+                    {detailOrder.cancelReason && (
+                      <div className="text-secondary fs-7">Lý do: {detailOrder.cancelReason}</div>
+                    )}
+                    {detailOrder.cancelledBy && (
+                      <div className="text-secondary fs-7">Người hủy: {detailOrder.cancelledBy === 'CUSTOMER' ? 'Khách hàng' : `Admin (${detailOrder.cancelledBy})`}</div>
+                    )}
+                    {detailOrder.cancelledAt && (
+                      <div className="text-secondary fs-7">Thời điểm: {new Date(detailOrder.cancelledAt).toLocaleString('vi-VN')}</div>
+                    )}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer border-secondary">
+                <button onClick={() => setDetailOrder(null)} className="btn btn-secondary btn-sm px-4">
+                  Đóng
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
 
       <style jsx>{`
         .max-w-600 {

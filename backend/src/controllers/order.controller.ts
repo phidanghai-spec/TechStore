@@ -156,14 +156,24 @@ export class OrderController {
           }
         });
 
-        // Deduct product stock
-        for (const item of items) {
+        // Deduct product stock + ghi StockMovement EXPORT (lịch sử kho phản ánh bán hàng thật)
+        for (const item of orderItemsData) {
           await tx.product.update({
             where: { id: item.productId },
             data: {
               stock: {
                 decrement: item.quantity
               }
+            }
+          });
+          // Ghi StockMovement EXPORT tự động — đồng bộ lịch sử kho với bán hàng
+          await tx.stockMovement.create({
+            data: {
+              productId: item.productId,
+              type: 'EXPORT',
+              quantity: item.quantity,
+              note: `Bán hàng - Đơn #${order.id.substring(0, 8).toUpperCase()}`,
+              createdBy: null // hệ thống tự động
             }
           });
         }

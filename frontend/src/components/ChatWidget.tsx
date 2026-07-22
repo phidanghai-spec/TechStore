@@ -31,15 +31,17 @@ export default function ChatWidget() {
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Trạng thái Trò chuyện AI (Gemini AI)
+  // Trạng thái Trò chuyện AI
   const [aiMessages, setAiMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]); // Gợi ý câu hỏi tiếp theo từ AI
 
   // Trạng thái Trò chuyện với Tư vấn viên (Admin)
   const [adminMessages, setAdminMessages] = useState<Message[]>([]);
   const [isRegistered, setIsRegistered] = useState(false);
   const [isAdminTyping, setIsAdminTyping] = useState(false);
   const [guestUserId, setGuestUserId] = useState<string | null>(null); // UUID thật từ server
+  const guestUserIdRef = useRef<string | null>(null); // Ref để không bị stale closure
   const socketRef = useRef<Socket | null>(null);
 
   // Tự động cuộn xuống tin nhắn mới nhất
@@ -97,9 +99,12 @@ export default function ChatWidget() {
       setAdminMessages(prev => [...prev, msg]);
     });
 
-    // Nhận UUID thật của guest user từ server
+    // Nhận UUID thật của guest user từ server — join phòng UUID để khớp với Admin
     socket.on('guest_registered', (data: { userId: string }) => {
       setGuestUserId(data.userId);
+      guestUserIdRef.current = data.userId;
+      // Join phòng UUID mới — server đã join server-side, đây để đảm bảo client cũng trong đúng phòng
+      socket.emit('join_room', data.userId);
     });
 
     socket.on('typing_status', (data: { isTyping: boolean; senderName: string }) => {
@@ -115,15 +120,16 @@ export default function ChatWidget() {
   }, [chatMode, isOpen, isRegistered, customerName, user]);
 
   // ─── XỬ LÝ GỬI TIN NHẮN CHO AI ────────────────────────────────────────────
-  const handleAiSend = async (e: React.FormEvent) => {
+  const handleAiSend = async (e: React.FormEvent, overrideText?: string) => {
     e.preventDefault();
-    const text = inputMessage.trim();
+    const text = (overrideText || inputMessage).trim();
     if (!text || isAiLoading) return;
 
     const newUserMsg = { role: 'user' as const, content: text };
     const updatedHistory = [...aiMessages, newUserMsg];
     setAiMessages(updatedHistory);
     setInputMessage('');
+    setAiSuggestions([]); // Xóa suggestions cũ khi gửi tin nhắn mới
     setIsAiLoading(true);
 
     try {
@@ -139,17 +145,20 @@ export default function ChatWidget() {
       const data = await res.json();
       if (res.ok) {
         setAiMessages(prev => [...prev, { role: 'assistant', content: data.reply }]);
+        setAiSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
       } else {
         setAiMessages(prev => [...prev, {
           role: 'assistant',
           content: data.message || 'Xin lỗi, đã có lỗi xảy ra. Vui lòng thử lại.'
         }]);
+        setAiSuggestions([]);
       }
     } catch {
       setAiMessages(prev => [...prev, {
         role: 'assistant',
         content: 'Không thể kết nối tới AI. Vui lòng kiểm tra kết nối mạng hoặc chuyển sang chat với admin.'
       }]);
+      setAiSuggestions([]);
     } finally {
       setIsAiLoading(false);
     }
@@ -165,9 +174,10 @@ export default function ChatWidget() {
     e.preventDefault();
     if (!inputMessage.trim() || !socketRef.current) return;
 
-    const roomId = user?.id || customerEmail || 'guest_room';
+    // Ưu tiên dùng UUID thật (ref) → user.id → email (fallback cuối)
+    const roomId = guestUserIdRef.current || user?.id || customerEmail || 'guest_room';
     socketRef.current.emit('send_message', {
-      senderId: user?.id || customerEmail,
+      senderId: user?.id || guestUserIdRef.current || customerEmail,
       senderName: customerName || 'Khách vãng lai',
       senderEmail: customerEmail || 'guest@techstore.vn',
       receiverId: 'admin_placeholder',
@@ -181,7 +191,7 @@ export default function ChatWidget() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInputMessage(e.target.value);
     if (chatMode === 'admin' && socketRef.current) {
-      const roomId = user?.id || customerEmail || 'guest_room';
+      const roomId = guestUserIdRef.current || user?.id || customerEmail || 'guest_room';
       socketRef.current.emit('typing', {
         roomId,
         isTyping: e.target.value.length > 0,
@@ -202,7 +212,7 @@ export default function ChatWidget() {
 
       {/* Chat Popup */}
       {isOpen && (
-        <div className="chat-popup d-flex flex-column" style={{ fontFamily: 'inherit' }}>
+        <div className="chat-popup d-flex flex-column" style={{ fontFamily: 'inherit', width: '420px', height: '580px' }}>
 
           {/* Header */}
           <div style={{ background: 'linear-gradient(135deg, #0d6efd, #6610f2)' }} className="text-white p-3">
@@ -293,6 +303,27 @@ export default function ChatWidget() {
                     </div>
                   </div>
                 )}
+
+                {/* Quick reply suggestions từ AI — cập nhật động theo context */}
+                {!isAiLoading && aiSuggestions.length > 0 && (
+                  <div className="d-flex flex-column gap-1 mt-1">
+                    <span className="text-secondary" style={{ fontSize: '0.6rem', opacity: 0.7 }}>💡 Bạn có thể hỏi tiếp:</span>
+                    {aiSuggestions.map((suggestion, i) => (
+                      <button
+                        key={i}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleAiSend(e as any, suggestion);
+                        }}
+                        className="btn btn-outline-secondary btn-sm text-start text-white"
+                        style={{ fontSize: '0.68rem', borderRadius: '12px', padding: '4px 10px' }}
+                      >
+                        💬 {suggestion}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 <div ref={messagesEndRef} />
               </div>
             )}

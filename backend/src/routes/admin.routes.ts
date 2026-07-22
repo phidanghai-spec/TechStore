@@ -14,6 +14,8 @@ router.post('/products', AdminController.createProduct);
 router.put('/products/:id', AdminController.updateProduct);
 router.delete('/products/:id', AdminController.deleteProduct);
 router.post('/products/:id/stock-in', AdminController.stockIn); // Nhập kho
+router.post('/products/:id/stock-out', AdminController.stockOut); // Xuất kho thủ công
+router.get('/stock-movements', AdminController.getStockMovements); // Lịch sử nhập xuất kho
 
 // User Management
 router.get('/users', AdminController.getAllUsers);

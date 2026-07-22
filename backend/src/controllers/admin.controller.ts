@@ -840,4 +840,134 @@ export class AdminController {
       return res.status(500).json({ message: 'Lỗi hệ thống khi nhập kho.' });
     }
   }
+
+  // ==========================================
+  // 2.8 XUẤT KHO THỤ CÔNG
+  // ==========================================
+
+  /**
+   * Xuất kho sản phẩm (hàng hư, điều chỉnh) — ghi StockMovement và giảm stock
+   * POST /api/admin/products/:id/stock-out
+   */
+  public static async stockOut(req: Request, res: Response) {
+    const { id } = req.params;
+    const { quantity, note } = req.body;
+    const adminUser = (req as any).user;
+
+    if (!quantity || isNaN(parseInt(quantity)) || parseInt(quantity) <= 0) {
+      return res.status(400).json({ message: 'Số lượng xuất kho phải là số nguyên dương.' });
+    }
+
+    try {
+      const qty = parseInt(quantity);
+
+      // Kiểm tra tồn kho hiện tại trước khi xuất
+      const product = await prisma.product.findUnique({ where: { id } });
+      if (!product) {
+        return res.status(404).json({ message: 'Không tìm thấy sản phẩm.' });
+      }
+      if (qty > product.stock) {
+        return res.status(400).json({
+          message: `Không đủ tồn kho để xuất. Tồn kho hiện tại: ${product.stock}, yêu cầu xuất: ${qty}.`
+        });
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        // Giảm tồn kho sản phẩm
+        const updatedProduct = await tx.product.update({
+          where: { id },
+          data: { stock: { decrement: qty } }
+        });
+
+        // Ghi lịch sử xuất kho
+        const movement = await tx.stockMovement.create({
+          data: {
+            productId: id,
+            type: 'EXPORT',
+            quantity: qty,
+            note: note || null,
+            createdBy: adminUser?.id || null
+          }
+        });
+
+        return { product: updatedProduct, movement };
+      });
+
+      return res.status(200).json({
+        message: `Xuất kho thành công. Tồn kho hiện tại: ${result.product.stock} sản phẩm.`,
+        stock: result.product.stock,
+        movement: result.movement
+      });
+    } catch (error: any) {
+      console.error('Stock-out error:', error);
+      if (error.code === 'P2025') {
+        return res.status(404).json({ message: 'Không tìm thấy sản phẩm.' });
+      }
+      return res.status(500).json({ message: 'Lỗi hệ thống khi xuất kho.' });
+    }
+  }
+
+  // ==========================================
+  // 2.9 LỊCH SỬ NHẬP XUẤT KHO
+  // ==========================================
+
+  /**
+   * Lấy lịch sử nhập xuất kho, có phân trang và lọc
+   * GET /api/admin/stock-movements?productId=&type=&from=&to=&page=&limit=
+   */
+  public static async getStockMovements(req: Request, res: Response) {
+    const { productId, type, from, to, page = '1', limit = '20' } = req.query;
+
+    try {
+      const where: any = {};
+
+      if (productId) where.productId = productId as string;
+      if (type && ['IMPORT', 'EXPORT', 'ADJUST'].includes(type as string)) {
+        where.type = type as string;
+      }
+      if (from || to) {
+        where.createdAt = {};
+        if (from) {
+          const fromDate = new Date(from as string);
+          if (!isNaN(fromDate.getTime())) where.createdAt.gte = fromDate;
+        }
+        if (to) {
+          const toDate = new Date(to as string);
+          if (!isNaN(toDate.getTime())) {
+            toDate.setHours(23, 59, 59, 999);
+            where.createdAt.lte = toDate;
+          }
+        }
+      }
+
+      const pageNum = Math.max(1, parseInt(page as string) || 1);
+      const limitNum = Math.min(100, parseInt(limit as string) || 20);
+      const skip = (pageNum - 1) * limitNum;
+
+      const [movements, total] = await Promise.all([
+        prisma.stockMovement.findMany({
+          where,
+          include: {
+            product: {
+              select: { id: true, name: true, stock: true, imageUrl: true }
+            }
+          },
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limitNum
+        }),
+        prisma.stockMovement.count({ where })
+      ]);
+
+      return res.status(200).json({
+        movements,
+        total,
+        page: pageNum,
+        totalPages: Math.ceil(total / limitNum)
+      });
+    } catch (error: any) {
+      console.error('Get stock movements error:', error);
+      return res.status(500).json({ message: 'Lỗi hệ thống khi tải lịch sử kho.' });
+    }
+  }
 }
