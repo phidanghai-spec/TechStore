@@ -18,10 +18,26 @@ function CheckoutResultContent() {
   useEffect(() => {
     const resultCode = searchParams.get('resultCode');
     const momoOrderId = searchParams.get('orderId') || '';
+    const vnpResponseCode = searchParams.get('vnp_ResponseCode');
+    const paymentMethodParam = searchParams.get('paymentMethod');
+    const successParam = searchParams.get('success');
     const pendingOrderId = localStorage.getItem('pendingOrderId') || '';
 
-    // Kiểm tra từ MoMo redirect
-    if (resultCode !== null) {
+    // 1. Kiểm tra từ VNPAY redirect
+    if (paymentMethodParam === 'VNPAY' || vnpResponseCode !== null) {
+      const realOrder = momoOrderId || pendingOrderId;
+      setOrderId(realOrder);
+      if (vnpResponseCode === '00' || successParam === 'true') {
+        setStatus('success');
+        setMessage('Thanh toán VNPAY thành công! Đơn hàng của bạn đã được xác nhận.');
+      } else {
+        setStatus('failed');
+        setMessage(`Thanh toán VNPAY không thành công (Mã phản hồi: ${vnpResponseCode || 'Lỗi'}). Bạn có thể thanh toán COD khi nhận hàng.`);
+      }
+      localStorage.removeItem('pendingOrderId');
+    }
+    // 2. Kiểm tra từ MoMo redirect
+    else if (resultCode !== null) {
       if (resultCode === '0') {
         setStatus('success');
         setOrderId(pendingOrderId || momoOrderId);

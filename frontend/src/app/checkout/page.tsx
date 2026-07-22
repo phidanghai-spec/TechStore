@@ -19,7 +19,7 @@ export default function CheckoutPage() {
   const [customerPhone, setCustomerPhone] = useState('');
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerAddress, setCustomerAddress] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MOMO' | 'PAYPAL'>('COD');
+  const [paymentMethod, setPaymentMethod] = useState<'COD' | 'MOMO' | 'PAYPAL' | 'VNPAY'>('COD');
 
   // Trạng thái Mã giảm giá (Coupon)
   const [couponCode, setCouponCode] = useState('');
@@ -189,6 +189,32 @@ export default function CheckoutPage() {
             alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nKhông thể mở cổng MoMo. Vui lòng thanh toán khi nhận hàng.`);
             router.push('/');
           }
+        } else if (paymentMethod === 'VNPAY') {
+          // Gọi VNPAY API để tạo link thanh toán
+          try {
+            const vnpayRes = await fetch(`${BACKEND_URL}/api/payments/vnpay/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                orderId: data.orderId,
+                amount: Math.round(finalPayable),
+                orderInfo: `TechStore - Thanh toan don hang #${data.orderId.substring(0, 8).toUpperCase()}`
+              })
+            });
+            const vnpayData = await vnpayRes.json();
+
+            if (vnpayData.success && vnpayData.payUrl) {
+              localStorage.setItem('pendingOrderId', data.orderId);
+              window.location.href = vnpayData.payUrl;
+              return;
+            } else {
+              alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nKhông thể kết nối cổng VNPAY (${vnpayData.message || 'lỗi không xác định'}). Vui lòng thanh toán COD khi nhận hàng.`);
+              router.push('/');
+            }
+          } catch {
+            alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nKhông thể mở cổng VNPAY. Vui lòng thanh toán khi nhận hàng.`);
+            router.push('/');
+          }
         } else if (paymentMethod === 'PAYPAL') {
           localStorage.setItem('pendingOrderId', data.orderId);
           alert(`Đặt hàng thành công! Mã đơn: #${data.orderId.substring(0, 8).toUpperCase()}\n\nĐang chuyển đến cổng thanh toán PayPal Sandbox...`);
@@ -301,6 +327,19 @@ export default function CheckoutPage() {
                       <div>
                         <span className="fw-bold fs-7 d-block">Ví điện tử MoMo (Online)</span>
                         <small className="text-secondary fs-8">Thanh toán nhanh chóng qua ví điện tử MoMo của bạn.</small>
+                      </div>
+                    </label>
+
+                    <label className="d-flex align-items-center gap-2 p-3 bg-black border border-secondary rounded cursor-pointer">
+                      <input 
+                        type="radio" 
+                        name="payment"
+                        checked={paymentMethod === 'VNPAY'}
+                        onChange={() => setPaymentMethod('VNPAY')}
+                      />
+                      <div>
+                        <span className="fw-bold fs-7 d-block text-primary">Cổng VNPAY (ATM / Visa / QR Ngân hàng)</span>
+                        <small className="text-secondary fs-8">Thanh toán qua quét mã QR hoặc thẻ ngân hàng nội địa / quốc tế VNPAY.</small>
                       </div>
                     </label>
 
