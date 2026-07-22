@@ -1,10 +1,12 @@
 import { Request, Response } from 'express';
 import Anthropic from '@anthropic-ai/sdk';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import prisma from '../services/prisma.service';
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY || 'dummy_key',
 });
+
 
 // System prompt cố định cho TechStore AI Assistant
 const SYSTEM_PROMPT = `Bạn là TechBot - trợ lý AI thông minh của TechStore, một cửa hàng điện tử chuyên kinh doanh điện thoại, laptop và phụ kiện công nghệ tại Việt Nam.
@@ -241,9 +243,73 @@ async function generateSmartFallbackAnswer(query: string): Promise<FallbackResul
   };
 }
 
+/**
+ * RAG Chat với Google Gemini AI
+ */
+async function callGeminiAi(trimmedMsg: string, productContext: string, conversationHistory: any[]): Promise<{ reply: string; suggestions: string[] }> {
+  const apiKey = process.env.GEMINI_API_KEY || '';
+  const genAI = new GoogleGenerativeAI(apiKey);
+
+  const systemPromptWithContext = `${SYSTEM_PROMPT}
+
+## SẢN PHẨM HIỆN CÓ TRONG KHO (cập nhật thực tế):
+${productContext || 'Không tìm thấy sản phẩm phù hợp trong database hiện tại.'}
+
+---
+Hãy tư vấn dựa trên thông tin sản phẩm trên. Nếu khách hỏi về sản phẩm không có trong danh sách, hãy thành thật và đề nghị khách liên hệ trực tiếp.`;
+
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-1.5-flash',
+    systemInstruction: systemPromptWithContext,
+    generationConfig: {
+      responseMimeType: 'application/json',
+      temperature: 0.7,
+    }
+  });
+
+  const contents: any[] = [];
+  if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+    const recentHistory = conversationHistory.slice(-10);
+    for (const hist of recentHistory) {
+      if (hist.role === 'user' || hist.role === 'assistant') {
+        contents.push({
+          role: hist.role === 'assistant' ? 'model' : 'user',
+          parts: [{ text: hist.content }]
+        });
+      }
+    }
+  }
+
+  contents.push({
+    role: 'user',
+    parts: [{ text: trimmedMsg }]
+  });
+
+  const result = await model.generateContent({ contents });
+  const rawReply = result.response.text();
+
+  let reply = rawReply;
+  let suggestions: string[] = [];
+
+  try {
+    const stripped = rawReply
+      .replace(/^```(?:json)?\n?/, '')
+      .replace(/\n?```$/, '')
+      .trim();
+    const parsed = JSON.parse(stripped);
+    reply = parsed.reply || rawReply;
+    suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3) : [];
+  } catch {
+    reply = rawReply;
+    suggestions = [];
+  }
+
+  return { reply, suggestions };
+}
+
 export class AiController {
   /**
-   * RAG Chat với Claude AI (Kèm Smart Fallback từ DB)
+   * RAG Chatbot Endpoint (Hỗ trợ Gemini AI, Claude AI & Smart DB Fallback)
    * POST /api/ai/chat
    */
   public static async chat(req: Request, res: Response) {
@@ -254,20 +320,31 @@ export class AiController {
     }
 
     const trimmedMsg = message.trim();
+    const hasGeminiKey = process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 10;
+    const hasClaudeKey = process.env.ANTHROPIC_API_KEY && process.env.ANTHROPIC_API_KEY !== 'dummy_key' && process.env.ANTHROPIC_API_KEY.length > 10;
 
-    // Nếu không có API KEY hoặc Key chưa cài đặt, dùng Smart Fallback từ CSDL ngay lập tức
-    if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'dummy_key' || process.env.ANTHROPIC_API_KEY.length < 10) {
-      console.log('ANTHROPIC_API_KEY not configured. Using Smart DB Fallback Engine.');
-      const fallback = await generateSmartFallbackAnswer(trimmedMsg);
-      return res.status(200).json({ reply: fallback.reply, suggestions: fallback.suggestions });
+    // 1. Thử dùng Google Gemini AI RAG nếu có GEMINI_API_KEY
+    if (hasGeminiKey) {
+      try {
+        console.log('Executing RAG Chat using Google Gemini AI...');
+        const productContext = await getRelevantProducts(trimmedMsg);
+        const result = await callGeminiAi(trimmedMsg, productContext, conversationHistory);
+        return res.status(200).json({
+          reply: result.reply,
+          suggestions: result.suggestions,
+          provider: 'Google Gemini AI (RAG)'
+        });
+      } catch (geminiError: any) {
+        console.error('Google Gemini AI chat error, falling back:', geminiError?.message || geminiError);
+      }
     }
 
-    try {
-      // Step 1: Retrieve relevant products (RAG)
-      const productContext = await getRelevantProducts(trimmedMsg);
-
-      // Step 2: Build conversation history for Claude
-      const systemPromptWithContext = `${SYSTEM_PROMPT}
+    // 2. Thử dùng Claude AI RAG nếu có ANTHROPIC_API_KEY
+    if (hasClaudeKey) {
+      try {
+        console.log('Executing RAG Chat using Anthropic Claude AI...');
+        const productContext = await getRelevantProducts(trimmedMsg);
+        const systemPromptWithContext = `${SYSTEM_PROMPT}
 
 ## SẢN PHẨM HIỆN CÓ TRONG KHO (cập nhật thực tế):
 ${productContext || 'Không tìm thấy sản phẩm phù hợp trong database hiện tại.'}
@@ -275,71 +352,75 @@ ${productContext || 'Không tìm thấy sản phẩm phù hợp trong database h
 ---
 Hãy tư vấn dựa trên thông tin sản phẩm trên. Nếu khách hỏi về sản phẩm không có trong danh sách, hãy thành thật và đề nghị khách liên hệ trực tiếp.`;
 
-      const messages: Anthropic.MessageParam[] = [];
-      if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
-        const recentHistory = conversationHistory.slice(-10);
-        for (const hist of recentHistory) {
-          if (hist.role === 'user' || hist.role === 'assistant') {
-            messages.push({
-              role: hist.role,
-              content: hist.content
-            });
+        const messages: Anthropic.MessageParam[] = [];
+        if (Array.isArray(conversationHistory) && conversationHistory.length > 0) {
+          const recentHistory = conversationHistory.slice(-10);
+          for (const hist of recentHistory) {
+            if (hist.role === 'user' || hist.role === 'assistant') {
+              messages.push({
+                role: hist.role,
+                content: hist.content
+              });
+            }
           }
         }
-      }
 
-      messages.push({
-        role: 'user',
-        content: trimmedMsg
-      });
+        messages.push({
+          role: 'user',
+          content: trimmedMsg
+        });
 
-      // Step 3: Call Claude API — model claude-haiku-4-5-20251001 (Claude Haiku 4.5, hiện hành)
-      const response = await anthropic.messages.create({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        system: systemPromptWithContext,
-        messages
-      });
+        const response = await anthropic.messages.create({
+          model: 'claude-haiku-4-5-20251001',
+          max_tokens: 1024,
+          system: systemPromptWithContext,
+          messages
+        });
 
-      const rawReply = response.content[0].type === 'text' 
-        ? response.content[0].text 
-        : '{"reply": "Xin lỗi, tôi không thể xử lý yêu cầu này.", "suggestions": []}';
+        const rawReply = response.content[0].type === 'text' 
+          ? response.content[0].text 
+          : '{"reply": "Xin lỗi, tôi không thể xử lý yêu cầu này.", "suggestions": []}';
 
-      // Step 4: Parse JSON — strip code fence trước nếu model tự thêm vào
-      let reply = rawReply;
-      let suggestions: string[] = [];
+        let reply = rawReply;
+        let suggestions: string[] = [];
 
-      try {
-        const stripped = rawReply
-          .replace(/^```(?:json)?\n?/, '')
-          .replace(/\n?```$/, '')
-          .trim();
-        const parsed = JSON.parse(stripped);
-        reply = parsed.reply || rawReply;
-        suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3) : [];
-      } catch {
-        // Model không trả JSON — dùng nguyên văn, suggestions rỗng
-        reply = rawReply;
-        suggestions = [];
-      }
-
-      return res.status(200).json({
-        reply,
-        suggestions,
-        usage: {
-          inputTokens: response.usage.input_tokens,
-          outputTokens: response.usage.output_tokens
+        try {
+          const stripped = rawReply
+            .replace(/^```(?:json)?\n?/, '')
+            .replace(/\n?```$/, '')
+            .trim();
+          const parsed = JSON.parse(stripped);
+          reply = parsed.reply || rawReply;
+          suggestions = Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3) : [];
+        } catch {
+          reply = rawReply;
+          suggestions = [];
         }
-      });
 
-    } catch (error: any) {
-      console.error('Claude AI chat error, switching to Smart Fallback:', error?.message || error);
-      
-      // Fallback về Smart DB Answer khi API Key hết tiền / 401 / lỗi kết nối
-      const fallback = await generateSmartFallbackAnswer(trimmedMsg);
-      return res.status(200).json({ reply: fallback.reply, suggestions: fallback.suggestions });
+        return res.status(200).json({
+          reply,
+          suggestions,
+          provider: 'Anthropic Claude AI (RAG)',
+          usage: {
+            inputTokens: response.usage.input_tokens,
+            outputTokens: response.usage.output_tokens
+          }
+        });
+      } catch (claudeError: any) {
+        console.error('Claude AI chat error:', claudeError?.message || claudeError);
+      }
     }
+
+    // 3. Fallback về Smart DB Answer khi không có Key hoặc cả 2 API đều lỗi
+    console.log('Using Smart DB Fallback Engine.');
+    const fallback = await generateSmartFallbackAnswer(trimmedMsg);
+    return res.status(200).json({
+      reply: fallback.reply,
+      suggestions: fallback.suggestions,
+      provider: 'Smart DB Fallback Engine'
+    });
   }
+
 
   /**
    * Lấy danh sách sản phẩm gợi ý cho AI context (debug endpoint)
