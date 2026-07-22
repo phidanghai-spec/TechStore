@@ -98,7 +98,10 @@ export default function CheckoutPage() {
     if (!couponCode.trim()) return;
 
     try {
-      const res = await fetch(`${BACKEND_URL}/api/coupons/validate/${couponCode.toUpperCase()}`);
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${BACKEND_URL}/api/coupons/validate/${couponCode.toUpperCase()}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
       const data = await res.json();
 
       if (res.ok) {

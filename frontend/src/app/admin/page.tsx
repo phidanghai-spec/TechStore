@@ -1103,15 +1103,45 @@ export default function AdminPage() {
                                   {filtered.length === 0 ? (
                                     <p className="text-secondary fs-8 text-center py-3">Không có đơn nào</p>
                                   ) : (
-                                    <div className="d-flex flex-column gap-2" style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                                    <div className="d-flex flex-column gap-2" style={{ maxHeight: '350px', overflowY: 'auto' }}>
                                       {filtered.map((o: any) => (
-                                        <div key={o.id} className="p-2 rounded" style={{ background: '#111', fontSize: '0.72rem' }}>
+                                        <div key={o.id} className="p-2 rounded border border-secondary border-opacity-25" style={{ background: '#111', fontSize: '0.72rem' }}>
                                           <div className="d-flex justify-content-between mb-1">
                                             <strong className="text-white">#{o.id.substring(0,8).toUpperCase()}</strong>
                                             <span className="text-secondary">{new Date(o.createdAt).toLocaleDateString('vi-VN')}</span>
                                           </div>
-                                          <div className="text-secondary">{o.user?.fullName || o.customerName}</div>
-                                          <div className="text-primary fw-bold">{new Intl.NumberFormat('vi-VN').format(o.totalAmount)}đ</div>
+                                          <div className="text-secondary mb-1">{o.user?.fullName || o.customerName}</div>
+                                          
+                                          {/* Danh sách sản phẩm trong đơn */}
+                                          {Array.isArray(o.items) && o.items.length > 0 && (
+                                            <div className="my-1 border-top border-bottom border-dark py-1">
+                                              {o.items.slice(0, 2).map((item: any, idx: number) => (
+                                                <div key={idx} className="d-flex align-items-center my-1" style={{ fontSize: '0.7rem' }}>
+                                                  <img
+                                                    src={item.product?.imageUrl || 'https://placehold.co/32x32/1a1a1a/ffffff?text=SP'}
+                                                    width="32"
+                                                    height="32"
+                                                    className="rounded me-2 flex-shrink-0 border border-secondary"
+                                                    style={{ objectFit: 'contain', backgroundColor: '#000' }}
+                                                    onError={(e) => {
+                                                      (e.target as HTMLImageElement).src = 'https://placehold.co/32x32/1a1a1a/ffffff?text=SP';
+                                                    }}
+                                                  />
+                                                  <div className="text-white text-truncate flex-grow-1" style={{ minWidth: 0 }}>
+                                                    {item.product?.name || 'Sản phẩm'}
+                                                  </div>
+                                                  <span className="text-secondary ms-2 flex-shrink-0">x{item.quantity}</span>
+                                                </div>
+                                              ))}
+                                              {o.items.length > 2 && (
+                                                <div className="text-secondary fs-8 fst-italic ms-1 mt-1">
+                                                  + {o.items.length - 2} sản phẩm khác
+                                                </div>
+                                              )}
+                                            </div>
+                                          )}
+
+                                          <div className="text-primary fw-bold mt-1">{new Intl.NumberFormat('vi-VN').format(o.totalAmount)}đ</div>
                                         </div>
                                       ))}
                                     </div>
