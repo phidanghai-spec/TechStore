@@ -21,14 +21,28 @@ function formatVnPayDate(date: Date): string {
   return `${yyyy}${MM}${dd}${HH}${mm}${ss}`;
 }
 
+/**
+ * Hàm sắp xếp object theo key và mã hóa urlencode (%20 -> +) chuẩn VNPAY
+ */
 function sortObject(obj: Record<string, any>): Record<string, string> {
   const sorted: Record<string, string> = {};
-  const keys = Object.keys(obj).sort();
-  for (const key of keys) {
-    if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
-      sorted[key] = String(obj[key]);
+  const str: string[] = [];
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      if (obj[key] !== undefined && obj[key] !== null && obj[key] !== '') {
+        str.push(encodeURIComponent(key));
+      }
     }
   }
+
+  str.sort();
+
+  for (let i = 0; i < str.length; i++) {
+    const k = str[i];
+    sorted[k] = encodeURIComponent(obj[k]).replace(/%20/g, '+');
+  }
+
   return sorted;
 }
 
@@ -82,24 +96,21 @@ export class VnpayService {
         vnpParams.vnp_BankCode = bankCode.trim();
       }
 
-      // Sort object keys alphabetically
+      // 1. Sắp xếp các tham số và urlencode theo chuẩn VNPAY
       const sortedParams = sortObject(vnpParams);
 
-      // Build sign string and query string
+      // 2. Tạo chuỗi dữ liệu ký HMAC SHA512
       const signDataParts: string[] = [];
-      const queryParts: string[] = [];
-
       for (const [key, value] of Object.entries(sortedParams)) {
         signDataParts.push(`${key}=${value}`);
-        queryParts.push(`${encodeURIComponent(key)}=${encodeURIComponent(value)}`);
       }
 
       const signData = signDataParts.join('&');
       const hmac = crypto.createHmac('sha512', VNPAY_HASH_SECRET);
       const signed = hmac.update(Buffer.from(signData, 'utf-8')).digest('hex');
 
-      queryParts.push(`vnp_SecureHash=${signed}`);
-      const payUrl = `${VNPAY_URL}?${queryParts.join('&')}`;
+      // 3. Ghép URL hoàn chỉnh gửi lên VNPAY Gateway
+      const payUrl = `${VNPAY_URL}?${signData}&vnp_SecureHash=${signed}`;
 
       return {
         success: true,
