@@ -7,12 +7,18 @@ import { MailService } from '../services/mail.service';
 const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 function getFrontendUrl(req: Request): string {
-  let frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+  let frontendUrl = process.env.FRONTEND_URL || '';
 
-  // Chống lỗi 404 khi FRONTEND_URL trên Render trỏ nhầm domain Vercel tạm thời đã bị xóa (techstore-temp.vercel.app)
-  if (frontendUrl.includes('techstore-temp.vercel.app') || !frontendUrl) {
+  // Hàm kiểm tra các domain không hợp lệ (domain tạm cũ đã bị xóa hoặc domain cổng thanh toán)
+  const isInvalidDomain = (url: string) =>
+    !url ||
+    url.includes('techstore-temp.vercel.app') ||
+    url.includes('vnpayment.vn') ||
+    url.includes('momo.vn');
+
+  if (isInvalidDomain(frontendUrl)) {
     const referer = req.headers.referer || req.headers.origin;
-    if (referer && !referer.includes('techstore-temp.vercel.app')) {
+    if (referer && !isInvalidDomain(referer as string)) {
       try {
         const parsed = new URL(referer as string);
         frontendUrl = `${parsed.protocol}//${parsed.host}`;

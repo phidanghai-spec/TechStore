@@ -9,7 +9,23 @@ const VNPAY_TMN_CODE = process.env.VNPAY_TMN_CODE || 'DLJ23DOO';
 const VNPAY_HASH_SECRET = process.env.VNPAY_HASH_SECRET || '46E2U5KV1SF0CERB0HLA3KAGHB62Q1SZ';
 const VNPAY_URL = process.env.VNPAY_URL || 'https://sandbox.vnpayment.vn/paymentv2/vpcpay.html';
 const BACKEND_URL = process.env.BACKEND_URL || 'https://techstore-backend-l1zs.onrender.com';
-const VNPAY_RETURN_URL = process.env.VNPAY_RETURN_URL || `${BACKEND_URL}/api/payments/vnpay/vnpay_return`;
+
+function getReturnUrl(): string {
+  let envReturnUrl = process.env.VNPAY_RETURN_URL;
+
+  // Nếu VNPAY_RETURN_URL rỗng hoặc không có http/https hoặc trỏ sai đường dẫn
+  if (
+    !envReturnUrl ||
+    !envReturnUrl.startsWith('http') ||
+    envReturnUrl.includes('sandbox.vnpayment.vn') ||
+    envReturnUrl.includes('/checkout/result')
+  ) {
+    const backendUrl = (process.env.BACKEND_URL || 'https://techstore-backend-l1zs.onrender.com').replace(/\/$/, '');
+    envReturnUrl = `${backendUrl}/api/payments/vnpay/vnpay_return`;
+  }
+
+  return envReturnUrl;
+}
 
 function formatVnPayDate(date: Date): string {
   const yyyy = date.getFullYear();
@@ -87,7 +103,7 @@ export class VnpayService {
         vnp_OrderInfo: orderInfo || `Thanh toan don hang #${orderId.substring(0, 8).toUpperCase()}`,
         vnp_OrderType: 'other',
         vnp_Amount: vnpAmount,
-        vnp_ReturnUrl: VNPAY_RETURN_URL,
+        vnp_ReturnUrl: getReturnUrl(),
         vnp_IpAddr: ipAddr || '127.0.0.1',
         vnp_CreateDate: createDate,
       };
