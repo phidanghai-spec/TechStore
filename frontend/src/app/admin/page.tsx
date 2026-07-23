@@ -123,18 +123,18 @@ export default function AdminPage() {
   const socketRef = useRef<Socket | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Xác thực quyền Admin khi mở trang Quản trị
+  // Xác thực quyền Admin khi mở trang Quản trị (CHỈ dùng admin_token và admin_user)
   useEffect(() => {
-    const token = localStorage.getItem('admin_token') || localStorage.getItem('token');
-    const storedUser = localStorage.getItem('admin_user') || localStorage.getItem('user');
+    const adminToken = localStorage.getItem('admin_token');
+    const adminUser = localStorage.getItem('admin_user');
 
-    if (!token || !storedUser) {
+    if (!adminToken || adminToken === 'null' || adminToken === 'undefined' || !adminUser || adminUser === 'null' || adminUser === 'undefined') {
       router.push('/account');
       return;
     }
 
     try {
-      const parsedUser = JSON.parse(storedUser);
+      const parsedUser = JSON.parse(adminUser);
       if (parsedUser.role !== 'ADMIN') {
         alert('Bạn không có quyền truy cập trang quản trị.');
         router.push('/account');
@@ -173,44 +173,11 @@ export default function AdminPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages, isCustomerTyping]);
 
-  // Xác thực quyền Admin khi mở trang Quản trị (tự động đồng bộ Token)
-  useEffect(() => {
-    const adminToken = localStorage.getItem('admin_token');
-    const token = localStorage.getItem('token');
-    const validToken = (adminToken && adminToken !== 'null' && adminToken !== 'undefined') ? adminToken : (token && token !== 'null' && token !== 'undefined') ? token : null;
-
-    const adminUser = localStorage.getItem('admin_user');
-    const user = localStorage.getItem('user');
-    const validUser = (adminUser && adminUser !== 'null' && adminUser !== 'undefined') ? adminUser : (user && user !== 'null' && user !== 'undefined') ? user : null;
-
-    if (!validToken || !validUser) {
-      router.push('/account');
-      return;
-    }
-
-    try {
-      const parsedUser = JSON.parse(validUser);
-      if (parsedUser.role !== 'ADMIN') {
-        alert('Bạn không có quyền truy cập trang quản trị.');
-        router.push('/account');
-      } else {
-        setIsAdmin(true);
-        // Tự động lưu sang admin_token & admin_user để các lần sau truy cập mượt mà
-        localStorage.setItem('admin_token', validToken);
-        localStorage.setItem('admin_user', validUser);
-      }
-    } catch (e) {
-      router.push('/account');
-    }
-  }, []);
-
   const getHeaders = () => {
-    const adminToken = localStorage.getItem('admin_token');
-    const token = localStorage.getItem('token');
-    const validToken = (adminToken && adminToken !== 'null' && adminToken !== 'undefined') ? adminToken : (token && token !== 'null' && token !== 'undefined') ? token : '';
+    const adminToken = localStorage.getItem('admin_token') || '';
     return {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${validToken}`
+      'Authorization': `Bearer ${adminToken}`
     };
   };
 
